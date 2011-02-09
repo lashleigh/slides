@@ -1,29 +1,25 @@
 var db;
 var res;
+var i;
 $(function() {
   db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
   db.transaction( function (t) {
-    t.executeSql('CREATE TABLE IF NOT EXISTS notes (id integer primary key, content, width, height, top, left, classes)', [], function(t, results) {
+    t.executeSql('CREATE TABLE IF NOT EXISTS notes (id integer primary key, content, width, height, top, left, classes, slide_id)', [], function(t, results) {
     });
 
-    t.executeSql('SELECT * FROM notes', [], function (t, results) {
-      var len = results.rows.length, i;
-      res = results;
-      console.log(res);
-      for (i = 0; i < len; i++) {
-        create_note(results.rows.item(i));
+    t.executeSql('SELECT slide_id FROM notes GROUP BY slide_id order by slide_id ASC', [], function (tx, group_results) {
+      for (i = 0; i < group_results.rows.length; i++) {
+        t.executeSql('SELECT * FROM notes WHERE slide_id=?', [group_results.rows.item(i).slide_id], function(t, results) { 
+            console.log(results);
+          var len = results.rows.length, i;
+          for (i = 0; i < len; i++) {
+            create_note(results.rows.item(i));
+          }
+        });
       }
+      clear_borders();
     });
   });
-
-  prettify();
-  /*$('.edit_area').editable('', {
-    type      : 'textarea',
-    cancel    : 'Cancel',
-    submit    : 'OK',
-    tooltip   : 'Click to edit...',
-    event     : "dblclick"
-  });*/
 
   $(".draggable").livequery( function() {
     $(this).draggable({ 
@@ -35,7 +31,6 @@ $(function() {
       },
       stop: function(event, ui) {
         db.transaction( function(t) {
-          console.log(event.target.id);
           t.executeSql('UPDATE notes SET top=?, left=? WHERE id=?', [ui.position.top, ui.position.left, parseInt(event.target.id)]);
         });
         var current = $(this)
@@ -46,20 +41,21 @@ $(function() {
   });
   $(".resizable").livequery( function() {
     $(this).resizable({
+      //grid: [460, 290], there is no snap tolerance it just makes the resizing space discrete
       resize: function(event, ui) {
         $(this).find('.preview').css("width",(ui.size.width)+"px");
         $(this).find('.preview').css("height",(ui.size.height)+"px");
-        $(this).find('textarea').css("width",(ui.size.width-10)+"px");
-        $(this).find('textarea').css("height",(ui.size.height-10)+"px");
+        $(this).find('textarea').css("width",(ui.size.width)+"px");
+        $(this).find('textarea').css("height",(ui.size.height)+"px");
         show_borders_this_red(this);
       },
       stop: function(event, ui) {
         clear_borders();
         grey_border(this);
         db.transaction( function(t) {
-          console.log(event.target.id);
           t.executeSql('UPDATE notes SET width=?, height=? WHERE id=?', [ui.size.width, ui.size.height, parseInt(event.target.id)]);
         });
+        prettify();
       }
     });
   });
@@ -76,7 +72,6 @@ $(function() {
 
   $(".creation_mask").dblclick( function(event) {
     db.transaction( function(t) {
-        console.log(event);
       t.executeSql('INSERT INTO notes (content, width, height, top, left) VALUES (?, ?, ?, ?, ?)', ["New box", 200, 100, event.layerY, event.layerX]);
       t.executeSql('SELECT * FROM notes', [], function(t, results) {
         var last = results.rows.length;
@@ -84,22 +79,42 @@ $(function() {
       });
     });
   });
-  $(".creation_mask").click( function(event) {
+  /*$(".creation_mask").click( function(event) {
     $(".preview").show();
     prettify();
     $("textarea").hide();
+  });*/
+
+  $(".note").live("dblclick", function() {
+    $(this).find(".preview").hide();
+    $(this).find("textarea").show().focus();
   });
 
-  $(".preview").live("dblclick", function() {
-    $(this).hide();
-    $(this).next().show();
+  $(".note").live("focusout", function(event) {
+    console.log(event.target.parentElement.id);         
+    var textarea = $(this).find("textarea").val();
+    db.transaction( function(t) {
+      t.executeSql('UPDATE notes SET content=? WHERE id=?', [textarea, parseInt(event.target.parentElement.id)]);
+    });
+    $(this).find(".preview").html(parse_textile($(this).find("textarea").val()));
+    $(this).find(".preview").show();
+    $(this).find("textarea").hide();
+    prettify();
   });
 
 });
 
+function create_slide(slide_id) {
+  $("#presentation").append('<div id="slide_'+slide_id+'"></div>');
+}
 function create_note(item) {
+  //$(".slide_inner").append('<div id='+item.id+' class='+get_classes(item)+' style='+style_string(item)+'></did>');
   $(".slide_inner").append('<div id='+item.id+' class='+get_classes(item)+' style='+style_string(item)+'><div class="preview">'+parse_textile(item.content)+'</div><textarea class="edit_area">'+item.content+'</textarea> <a id="info_2" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a></div>');
+  $('#'+item.id).find("textarea").css("width", item.width);
+  $('#'+item.id).find("textarea").css("height", item.height);
   $("textarea").css("display", "none");
+  prettify();
+
 }
 function get_classes(item) {
   return '"note '+item.classes+' resizable draggable"';
