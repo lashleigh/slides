@@ -1,5 +1,25 @@
 $(function() {
+  var db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
+  db.transaction( function (t) {
+    t.executeSql('CREATE TABLE IF NOT EXISTS notes (id unique, content, width, height, top, left, classes)');
+
+    t.executeSql('SELECT * FROM notes', [], function (t, results) {
+      var len = results.rows.length, i;
+      for (i = 0; i < len; i++) {
+        create_note(results.rows.item(i));
+      }
+    });
+  });
+
   prettify();
+  /*$('.edit_area').editable('', {
+    type      : 'textarea',
+    cancel    : 'Cancel',
+    submit    : 'OK',
+    tooltip   : 'Click to edit...',
+    event     : "dblclick"
+  });*/
+
   $(".draggable").livequery( function() {
     $(this).draggable({ 
       snap: ".draggable, .slide_inner",
@@ -10,7 +30,6 @@ $(function() {
       },
       stop: function(event, ui) {
         var current = $(this)
-        $.get("/position", {id: parseInt(current.attr("id").split("_")[1]), ttop: current.position().top, left: current.position().left })
         clear_borders();
         grey_border(this);
       }
@@ -19,14 +38,13 @@ $(function() {
   $(".resizable").livequery( function() {
     $(this).resizable({
       resize: function(event, ui) {
-        $(this).find('.in_place_editor_field').css("width",(ui.size.width)+"px");
-        $(this).find('.in_place_editor_field').css("height",(ui.size.height)+"px");
-        $(this).find('.formatted_content').css("width",(ui.size.width-10)+"px");
-        $(this).find('.formatted_content').css("height",(ui.size.height-10)+"px");
+        $(this).find('.preview').css("width",(ui.size.width)+"px");
+        $(this).find('.preview').css("height",(ui.size.height)+"px");
+        $(this).find('textarea').css("width",(ui.size.width-10)+"px");
+        $(this).find('textarea').css("height",(ui.size.height-10)+"px");
         show_borders_this_red(this);
       },
       stop: function(event, ui) {
-        $.get("/dimension", {id: parseInt($(this).attr("id").split("_")[1]), width: $(this).width(), height: $(this).height() })
         clear_borders();
         grey_border(this);
       }
@@ -36,56 +54,47 @@ $(function() {
   $(".note").live("mouseenter", function() {
     $(this).find(".info").show();
     grey_border(this);
-    prettify();
+    //prettify();
   });
   $(".note").live("mouseleave", function() {
     $(".info").hide();
     clear_borders()
   });
-  $(".note").live("dblclick", function() {
-    $(".edit_note").hide();
-    $(".formatted_content").show();
-    var outer_height = $(this).height() - 15-22;
-    var outer_width = $(this).width() - 15;
-    $(this).find(".edit_note").find("textarea").css("height", outer_height+"px");
-    $(this).find(".edit_note").find("textarea").css("width", outer_width+"px");
-    $(this).find(".edit_note").show();
-    $(this).find(".formatted_content").hide();
-  });
-    
-  $(".note").live("blur", function() {
-    var self = this;
-    $.get("/update", $(this).find(".edit_note").serialize(), function(result, txtstatus) {
-      $(self).find('.formatted_content').html(result);
-    });
-    $('.edit_note').hide();
-    $('.edit_note').next().show();
-  });
-
-  // This delete code is not going to work correctly
-  /*$(".delete").live("click", function(event) {
-    var self = $(this).attr("id").split("_")[1];
-    $.get("/destroy", {id: self}, function(result, txtstatus) {
-      $("#note_"+self).hide();   
-    });
-  });*/
 
   $(".creation_mask").dblclick( function(event) {
-      console.log(event);
-    $.get("notes/new", {
-      top: event.clientY, 
-      left: event.clientX,
-      width: 200, 
-      height: 200 }, function(result, txtstatus) {
-      $("#content").append(result);
-      });
   });
-});
-function prettify() {
-    $("pre").addClass("prettyprint");
-    prettyPrint();
-}
+  $(".creation_mask").click( function(event) {
+    $(".preview").show();
+    prettify();
+    $("textarea").hide();
+  });
 
+  $(".preview").dblclick( function() {
+    $(this).hide();
+    $(this).next().show();
+  });
+  // use localStorage for persistent storage
+  // use sessionStorage for per tab storage
+  /*$("textarea").live('keyup', function () {
+    window.localStorage.setItem('note', $(this).val());
+    window.localStorage.setItem('timestamp', (new Date()).getTime());
+  }, false);*/
+});
+
+function create_note(item) {
+  $(".slide_inner").append('<div class='+get_classes(item)+' style='+style_string(item)+'><div class="preview">'+parse_textile(item.content)+'</div><textarea class="edit_area">'+item.content+'</textarea> <a id="info_2" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a></div>');
+  $("textarea").css("display", "none");
+}
+function get_classes(item) {
+  return '"note '+item.classes+' resizable draggable"';
+}
+function style_string(item) {
+  return '"width:'+item.width+'px;height:'+item.height+'px;top:'+item.top+'px;left:'+item.left+'px;"'
+}
+function prettify() {
+  $("pre").addClass("prettyprint");
+  prettyPrint();
+}
 function show_borders_this_red(note) {
   $(".note").css("border-color", "rgba(25, 25, 25, 0.5)");
   $(note).css("border-color", "rgba(255, 25, 25, 0.8)");

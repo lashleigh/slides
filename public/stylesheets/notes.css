@@ -50,30 +50,21 @@ p { margin: 10px; }
   color: #444444;
   z-index: 10;
 }
-.in_place_editor_field {
+.preview {
   position: absolute;
-  left: 5px;
-  top: 5px;
-  width: 100%;
-  height: 100%;
 }
-.formatted_content input {
+.preview input {
   position: absolute !important;
   right: 8px !important;
   bottom: 8px;
 }
-.in_place_editor_field textarea {
+.preview textarea {
   display: block;
   margin: 0;
   overflow-y: auto;
   border: none;
   font-size: 1em;
   color: #444444;
-}
-.formatted_content, .preview {
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: absolute;
 }
 a.delete {
   display: none;
@@ -105,12 +96,12 @@ textarea::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-.formatted_content::-webkit-scrollbar {
+.preview::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 textarea::-webkit-scrollbar-thumb { background-color: #ffbb00 !important; }
-.formatted_content::-webkit-scrollbar-thumb { background-color: #ffbb00 !important; }
+.preview::-webkit-scrollbar-thumb { background-color: #ffbb00 !important; }
 textarea::-webkit-scrollbar-track {
   -webkit-border-radius: 3px;
   border-top-left-radius: 3px 3px;
@@ -118,7 +109,7 @@ textarea::-webkit-scrollbar-track {
   border-bottom-right-radius: 3px 3px;
   border-bottom-left-radius: 3px 3px;
 }
-.formatted_content::-webkit-scrollbar-track {
+.preview::-webkit-scrollbar-track {
   -webkit-border-radius: 3px;
   border-top-left-radius: 3px 3px;
   border-top-right-radius: 3px 3px;
@@ -132,7 +123,7 @@ textarea::-webkit-scrollbar-track-piece {
   border-bottom-right-radius: 3px 3px;
   border-bottom-left-radius: 3px 3px;
 }
-.formatted_content::-webkit-scrollbar-track-piece {
+.preview::-webkit-scrollbar-track-piece {
   -webkit-border-radius: 3px;
   border-top-left-radius: 3px 3px;
   border-top-right-radius: 3px 3px;
