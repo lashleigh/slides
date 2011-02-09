@@ -10,7 +10,6 @@ $(function() {
     t.executeSql('SELECT slide_id FROM notes GROUP BY slide_id order by slide_id ASC', [], function (tx, group_results) {
       for (i = 0; i < group_results.rows.length; i++) {
         t.executeSql('SELECT * FROM notes WHERE slide_id=?', [group_results.rows.item(i).slide_id], function(t, results) { 
-            console.log(results);
           var len = results.rows.length, i;
           for (i = 0; i < len; i++) {
             create_note(results.rows.item(i));
@@ -71,15 +70,13 @@ $(function() {
   });
   $(".info").live("click", function() {
     var id = parseInt($(this).attr("id").split("_")[1]);
-    console.log(id);
     db.transaction( function(t) {
       t.executeSql('DELETE FROM notes WHERE id=?', [id]);
     });
-    $('note_'+id+'').hide();
+    $("#note_"+id).hide();
   });
 
   $(".creation_mask").dblclick( function(event) {
-          console.log(event);
     db.transaction( function(t) {
       t.executeSql('INSERT INTO notes (content, top, left, slide_id) VALUES (?, ?, ?, ?)', ["New box", event.layerY, event.layerX, 2]);
       t.executeSql('SELECT * FROM notes', [], function(t, results) {
