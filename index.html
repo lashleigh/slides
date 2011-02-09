@@ -1,0 +1,118 @@
+<html><head>
+  <title>Ashleigh</title>
+  <script src="public/javascripts/jquery-1.4.4.min.js" type="text/javascript"></script>
+  <script src="public/javascripts/jquery-ui-1.8.7.custom.min.js" type="text/javascript"></script>
+  <script src="public/javascripts/prettify/prettify.js" type="text/javascript"></script>
+  <script src="public/javascripts/note.js" type="text/javascript"></script>
+  <script src="public/javascripts/jquery.livequery.js" type="text/javascript"></script>
+
+  <link href="public/stylesheets/notes.css" media="screen" rel="stylesheet" type="text/css">
+  <link href="public/stylesheets/prettify.css" media="screen" rel="stylesheet" type="text/css">
+  <link href="public/stylesheets/jquery-ui-1.8.7.custom.css" media="screen" rel="stylesheet" type="text/css">
+ 
+</head>
+<body>
+  <div id="content">
+    <div class="centerbox">
+      <div class="slide centerbox">
+      <div class="creation_mask"></div>
+      <div class="slide_inner">
+      <div id="note_2" class="note resizable draggable ui-draggable ui-resizable" style="top:306px;left:22px;width:918px;height:294px;">
+  <div class="in_place_editor_field">
+    <div class="formatted_content" style="width:908px;height:284px;">
+      <h1>This is to be my second note</h1>
+<p>Things seem to be working on heroku, which is really nice. From here I should think about:</p>
+<ol>
+  <li>Move the (X) further away, it completely covers some of the content</li>
+  <li>Make the editable text bigger</li>
+  <li>Add a live update shadow</li>
+  <li>figure out how to resize from all corners</li>
+  <li>figure out how to snap to center and other appropriate widths/heights</li>
+  <li>bug with prettify, focusout doesn’t do the trick for some reason</li>
+</ol>
+    </div>
+    <a id="info_2" class="info" href="#"><img alt="Info" src="public/images/info.png"></a>
+  </div>
+<div class="ui-resizable-handle ui-resizable-e"></div><div class="ui-resizable-handle ui-resizable-s"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 1001; "></div></div>
+
+
+        <div id="note_3" class="note resizable draggable ui-draggable ui-resizable" style="top:-1px;left:961px;width:241px;height:221px;">
+  <div class="in_place_editor_field">
+    <div class="formatted_content" style="width:231px;height:211px;">
+      <p>I’m conflicted about whether to keep the draggable and resizable stuff separate. Would it be better to instead make the content container have some amount of margin to bring it in from the edge?</p>
+    </div>
+    <a id="info_3" class="info" href="#"><img alt="Info" src="public/images/info.png"></a>
+  </div>
+<div class="ui-resizable-handle ui-resizable-e"></div><div class="ui-resizable-handle ui-resizable-s"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 1001; "></div></div>
+
+
+        <div id="note_25" class="note resizable draggable ui-draggable ui-resizable" style="top:450px;left:969px;width:271px;height:296px;">
+  <div class="in_place_editor_field">
+    <div class="formatted_content" style="width:261px;height:286px;">
+      <p>Adding content to this box is lots of fun except the box won’t go to the wall…</p>
+<pre><code>for i in range(20)
+  do some crap
+    add 3 and 5
+  end</code></pre>
+    </div>
+    <a id="info_25" class="info" href="#"><img alt="Info" src="public/images/info.png"></a>
+  </div>
+<div class="ui-resizable-handle ui-resizable-e"></div><div class="ui-resizable-handle ui-resizable-s"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 1001; "></div></div>
+
+
+        <div id="note_30" class="note resizable draggable ui-draggable ui-resizable" style="top:222px;left:961px;width:279px;height:226px;">
+  <div class="in_place_editor_field">
+    <div class="formatted_content" style="width:269px;height:216px;">
+      <p>By giving the content container an absolute position the notes now position themselves relative to that container. This means I can position the slide however I like without messing up the relative positions of the notes.</p>
+    </div>
+    <a id="info_30" class="info" href="#"><img alt="Info" src="public/images/info.png"></a>
+  </div>
+<div class="ui-resizable-handle ui-resizable-e"></div><div class="ui-resizable-handle ui-resizable-s"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 1001; "></div></div>
+
+
+        <div id="note_31" class="note resizable draggable ui-draggable ui-resizable" style="top:20px;left:529px;width:411px;height:269px;">
+  <div class="in_place_editor_field">
+    <div class="formatted_content" style="width:401px;height:259px;">
+      <h2 style="text-align:center;">yay and stuff!</h2>
+<pre><code>for i in range(10):
+    print i*i</code>
+
+<code>print "Thanks, guys!"</code>
+
+<code>print "Ok, I'm really going now."</code>
+
+<code>exit(1)</code></pre>
+    </div>
+    <a id="info_31" class="info" href="#"><img alt="Info" src="public/images/info.png"></a>
+  </div>
+<div class="ui-resizable-handle ui-resizable-e"></div><div class="ui-resizable-handle ui-resizable-s"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 1001; "></div></div>
+
+
+        <div id="note_33" class="note resizable draggable ui-draggable ui-resizable" style="top:20px;left:20px;width:509px;height:149px;">
+  <div class="in_place_editor_field">
+    <div class="formatted_content" style="width:499px;height:139px;">
+      <h1 style="font-size:2em;">Better slide shows with <span class="caps">CSS</span></h1>
+    </div>
+    <a id="info_33" class="info" href="#"><img alt="Info" src="public/images/info.png"></a>
+  </div>
+<div class="ui-resizable-handle ui-resizable-e"></div><div class="ui-resizable-handle ui-resizable-s"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 1001; "></div></div>
+
+
+        <div id="note_46" class="note resizable draggable ui-draggable ui-resizable" style="top:170px;left:120px;width:294px;height:146px;">
+  <div class="in_place_editor_field">
+    <div class="formatted_content" style="width:284px;height:136px;">
+      <p>Clever border formatting is for naught if new notes are invisible. Empty notes should always have visible borders… or automatically delete themselves.</p>
+    </div>
+    <a id="info_46" class="info" href="#"><img alt="Info" src="public/images/info.png"></a>
+  </div>
+<div class="ui-resizable-handle ui-resizable-e"></div><div class="ui-resizable-handle ui-resizable-s"></div><div class="ui-resizable-handle ui-resizable-se ui-icon ui-icon-gripsmall-diagonal-se" style="z-index: 1001; "></div></div>
+
+
+    </div>
+  </div>
+</div>
+
+  </div>
+
+
+</body></html>
