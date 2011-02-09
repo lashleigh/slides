@@ -1,10 +1,15 @@
+var db;
+var res;
 $(function() {
-  var db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
+  db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
   db.transaction( function (t) {
-    t.executeSql('CREATE TABLE IF NOT EXISTS notes (id unique, content, width, height, top, left, classes)');
+    t.executeSql('CREATE TABLE IF NOT EXISTS notes (id integer primary key, content, width, height, top, left, classes)', [], function(t, results) {
+    });
 
     t.executeSql('SELECT * FROM notes', [], function (t, results) {
       var len = results.rows.length, i;
+      res = results;
+      console.log(res);
       for (i = 0; i < len; i++) {
         create_note(results.rows.item(i));
       }
@@ -29,6 +34,10 @@ $(function() {
         show_borders_this_red(this);
       },
       stop: function(event, ui) {
+        db.transaction( function(t) {
+          console.log(event.target.id);
+          t.executeSql('UPDATE notes SET top=?, left=? WHERE id=?', [ui.position.top, ui.position.left, parseInt(event.target.id)]);
+        });
         var current = $(this)
         clear_borders();
         grey_border(this);
@@ -47,6 +56,10 @@ $(function() {
       stop: function(event, ui) {
         clear_borders();
         grey_border(this);
+        db.transaction( function(t) {
+          console.log(event.target.id);
+          t.executeSql('UPDATE notes SET width=?, height=? WHERE id=?', [ui.size.width, ui.size.height, parseInt(event.target.id)]);
+        });
       }
     });
   });
@@ -62,6 +75,14 @@ $(function() {
   });
 
   $(".creation_mask").dblclick( function(event) {
+    db.transaction( function(t) {
+        console.log(event);
+      t.executeSql('INSERT INTO notes (content, width, height, top, left) VALUES (?, ?, ?, ?, ?)', ["New box", 200, 100, event.layerY, event.layerX]);
+      t.executeSql('SELECT * FROM notes', [], function(t, results) {
+        var last = results.rows.length;
+        create_note(results.rows.item(last-1));    
+      });
+    });
   });
   $(".creation_mask").click( function(event) {
     $(".preview").show();
@@ -69,20 +90,15 @@ $(function() {
     $("textarea").hide();
   });
 
-  $(".preview").dblclick( function() {
+  $(".preview").live("dblclick", function() {
     $(this).hide();
     $(this).next().show();
   });
-  // use localStorage for persistent storage
-  // use sessionStorage for per tab storage
-  /*$("textarea").live('keyup', function () {
-    window.localStorage.setItem('note', $(this).val());
-    window.localStorage.setItem('timestamp', (new Date()).getTime());
-  }, false);*/
+
 });
 
 function create_note(item) {
-  $(".slide_inner").append('<div class='+get_classes(item)+' style='+style_string(item)+'><div class="preview">'+parse_textile(item.content)+'</div><textarea class="edit_area">'+item.content+'</textarea> <a id="info_2" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a></div>');
+  $(".slide_inner").append('<div id='+item.id+' class='+get_classes(item)+' style='+style_string(item)+'><div class="preview">'+parse_textile(item.content)+'</div><textarea class="edit_area">'+item.content+'</textarea> <a id="info_2" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a></div>');
   $("textarea").css("display", "none");
 }
 function get_classes(item) {
