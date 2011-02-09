@@ -4,7 +4,7 @@ var i;
 $(function() {
   db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
   db.transaction( function (t) {
-    t.executeSql('CREATE TABLE IF NOT EXISTS notes (id integer primary key, content, width, height, top, left, classes, slide_id)', [], function(t, results) {
+    t.executeSql('CREATE TABLE IF NOT EXISTS notes (id integer primary key, content, width DEFAULT 200 , height DEFAULT 100, top DEFAULT 20, left DEFAULT 20, classes, slide_id)', [], function(t, results) {
     });
 
     t.executeSql('SELECT slide_id FROM notes GROUP BY slide_id order by slide_id ASC', [], function (tx, group_results) {
@@ -15,9 +15,9 @@ $(function() {
           for (i = 0; i < len; i++) {
             create_note(results.rows.item(i));
           }
+        clear_borders();
         });
       }
-      clear_borders();
     });
   });
 
@@ -31,7 +31,7 @@ $(function() {
       },
       stop: function(event, ui) {
         db.transaction( function(t) {
-          t.executeSql('UPDATE notes SET top=?, left=? WHERE id=?', [ui.position.top, ui.position.left, parseInt(event.target.id)]);
+          t.executeSql('UPDATE notes SET top=?, left=? WHERE id=?', [ui.position.top, ui.position.left, parseInt(event.target.id.split("_")[1])]);
         });
         var current = $(this)
         clear_borders();
@@ -53,7 +53,7 @@ $(function() {
         clear_borders();
         grey_border(this);
         db.transaction( function(t) {
-          t.executeSql('UPDATE notes SET width=?, height=? WHERE id=?', [ui.size.width, ui.size.height, parseInt(event.target.id)]);
+          t.executeSql('UPDATE notes SET width=?, height=? WHERE id=?', [ui.size.width, ui.size.height, parseInt(event.target.id.split("_")[1])]);
         });
         prettify();
       }
@@ -69,10 +69,19 @@ $(function() {
     $(".info").hide();
     clear_borders()
   });
+  $(".info").live("click", function() {
+    var id = parseInt($(this).attr("id").split("_")[1]);
+    console.log(id);
+    db.transaction( function(t) {
+      t.executeSql('DELETE FROM notes WHERE id=?', [id]);
+    });
+    $('note_'+id+'').hide();
+  });
 
   $(".creation_mask").dblclick( function(event) {
+          console.log(event);
     db.transaction( function(t) {
-      t.executeSql('INSERT INTO notes (content, width, height, top, left) VALUES (?, ?, ?, ?, ?)', ["New box", 200, 100, event.layerY, event.layerX]);
+      t.executeSql('INSERT INTO notes (content, top, left, slide_id) VALUES (?, ?, ?, ?)', ["New box", event.layerY, event.layerX, 2]);
       t.executeSql('SELECT * FROM notes', [], function(t, results) {
         var last = results.rows.length;
         create_note(results.rows.item(last-1));    
@@ -91,10 +100,9 @@ $(function() {
   });
 
   $(".note").live("focusout", function(event) {
-    console.log(event.target.parentElement.id);         
     var textarea = $(this).find("textarea").val();
     db.transaction( function(t) {
-      t.executeSql('UPDATE notes SET content=? WHERE id=?', [textarea, parseInt(event.target.parentElement.id)]);
+      t.executeSql('UPDATE notes SET content=? WHERE id=?', [textarea, parseInt(event.target.parentElement.id.split("_")[1])]);
     });
     $(this).find(".preview").html(parse_textile($(this).find("textarea").val()));
     $(this).find(".preview").show();
@@ -109,9 +117,9 @@ function create_slide(slide_id) {
 }
 function create_note(item) {
   //$(".slide_inner").append('<div id='+item.id+' class='+get_classes(item)+' style='+style_string(item)+'></did>');
-  $(".slide_inner").append('<div id='+item.id+' class='+get_classes(item)+' style='+style_string(item)+'><div class="preview">'+parse_textile(item.content)+'</div><textarea class="edit_area">'+item.content+'</textarea> <a id="info_2" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a></div>');
-  $('#'+item.id).find("textarea").css("width", item.width);
-  $('#'+item.id).find("textarea").css("height", item.height);
+  $(".slide_inner").append('<div id=note_'+item.id+' class='+get_classes(item)+' style='+style_string(item)+'><div class="preview">'+parse_textile(item.content)+'</div><textarea class="edit_area">'+item.content+'</textarea> <a id="info_'+item.id+'" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a></div>');
+  $('#note_'+item.id).find("textarea").css("width", item.width);
+  $('#note_'+item.id).find("textarea").css("height", item.height);
   $("textarea").css("display", "none");
   prettify();
 
