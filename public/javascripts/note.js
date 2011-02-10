@@ -5,15 +5,20 @@ var j;
 $(function() {
   db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
   db.transaction( function (t) {
-    t.executeSql('CREATE TABLE IF NOT EXISTS notes (id integer primary key, content, width DEFAULT 200 , height DEFAULT 100, top DEFAULT 20, left DEFAULT 20, classes, slide_id)', [], function(t, results) {
-    });
+    t.executeSql('CREATE TABLE IF NOT EXISTS notes (id integer primary key, content, width DEFAULT 200, height DEFAULT 100, top DEFAULT 20, left DEFAULT 20, classes, slide_id)');
+    t.executeSql('CREATE TABLE IF NOT EXISTS slides (id integer primary key, scripts, classes DEFAULT "slide")');
 
     t.executeSql('SELECT slide_id FROM notes GROUP BY slide_id order by slide_id ASC', [], function (tx, group_results) {
       for (i = 0; i < group_results.rows.length; i++) {
-        t.executeSql('SELECT * FROM notes WHERE slide_id=?', [group_results.rows.item(i).slide_id], function(t, results) { 
+        current_slide = group_results.rows.item(i);
+        $(".slides").append(
+        '<div id="slide_'+current_slide.slide_id+'" class="slide current">'+
+          '<div id="mask_'+current_slide.slide_id+'" class="creation_mask"></div>'+
+          '<div class="slide_inner"> </div>'+
+        '</div>');
+        t.executeSql('SELECT * FROM notes WHERE slide_id=?', [current_slide.slide_id], function(t, results) { 
           var len = results.rows.length;
           for (j = 0; j < len; j++) {
-            console.log(results.rows.item(j));
             create_note(results.rows.item(j));
           }
         clear_borders();
@@ -122,7 +127,12 @@ function create_slide(slide_id) {
 }
 function create_note(item) {
   //$(".slide_inner").append('<div id='+item.id+' class='+get_classes(item)+' style='+style_string(item)+'></did>');
-  $("#slide_"+item.slide_id).find(".slide_inner").append('<div id=note_'+item.id+' class='+get_classes(item)+' style='+style_string(item)+'><div class="preview">'+parse_textile(item.content)+'</div><textarea class="edit_area">'+item.content+'</textarea> <a id="info_'+item.id+'" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a></div>');
+  $("#slide_"+item.slide_id).find(".slide_inner").append(
+          '<div id=note_'+item.id+' class='+get_classes(item)+' style='+style_string(item)+'>'+
+            '<div class="preview">'+parse_textile(item.content)+'</div>'+
+            '<textarea class="edit_area">'+item.content+'</textarea>'+ 
+            '<a id="info_'+item.id+'" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a>'+
+          '</div>');
   $('#note_'+item.id).find("textarea").css("width", item.width);
   $('#note_'+item.id).find("textarea").css("height", item.height);
   $("textarea").css("display", "none");
