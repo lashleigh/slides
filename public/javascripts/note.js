@@ -34,9 +34,9 @@ $(function() {
     });
   });
 
-  $(".draggable").livequery( function() {
+  $(".note").livequery( function() {
     $(this).draggable({ 
-      snap: ".draggable",
+      snap: ".note",
       snapMode: "outer",
       containment: "parent",
       opacity: 0.6,
@@ -54,7 +54,8 @@ $(function() {
       }
     });
   });
-  $(".resizable").livequery( function() {
+
+  $(".note").livequery( function() {
     $(this).resizable({
       //grid: [460, 290], there is no snap tolerance it just makes the resizing space discrete
       handles: 'ne, nw, se, sw, n, e, s, w',
@@ -112,9 +113,9 @@ $(function() {
   });
 
   $(".note").live("focusout", function(event) {
-    var textarea = $(this).find(".edit_area").val();
+    var edit_area_content = $(this).find(".edit_area").val();
     db.transaction( function(t) {
-      t.executeSql('UPDATE notes SET content=? WHERE id=?', [textarea, parseInt(event.target.parentElement.id.split("_")[1])]);
+      t.executeSql('UPDATE notes SET content=? WHERE id=?', [edit_area_content, parseInt(event.target.parentElement.id.split("_")[1])]);
     });
     $(this).find(".preview").html(parse_textile($(this).find(".edit_area").val()));
     $(this).find(".preview").show();
@@ -174,7 +175,7 @@ function create_note(item) {
 // or find a way to always have that column contain at least the 
 // word note.
 function get_classes(item) {
-  return '"resizable draggable '+item.classes+'"';
+  return item.classes;
 }
 function style_string(item) {
   return '"width:'+item.width+'px;height:'+item.height+'px;top:'+item.top+'px;left:'+item.left+'px;"'
