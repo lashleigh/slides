@@ -35,19 +35,6 @@ $(function() {
     });
   });
 
-  $(".slide").livequery( function() {
-    $(this).droppable({
-      accept: ".note",
-      tolerance: 'fit',
-      drop: function(event, ui) {
-      some = event;
-      someui = ui;
-        console.log(some);
-        console.log(someui);
-      }
-    });
-  });
-
   $(".draggable").livequery( function() {
     $(this).draggable({ 
       snap: ".draggable, .slide_inner",
@@ -136,7 +123,7 @@ $(function() {
 function handleKeys(e) {
    switch (e.keyCode) {
     case 37: // left arrow
-        setCurrent(); break;
+      prev(); break;
     case 39: // right arrow
       next(); break;
     case 32: // space
@@ -147,11 +134,23 @@ function handleKeys(e) {
       //this.switch3D(); break;
   }
 }
+function prev() {
+  var current = $(".current")
+  if (current.prev().length != 0) {
+    current.prev().removeClass("past reduced").addClass("current")
+    current.next().removeClass("future reduced").addClass("far-future")
+    current.addClass("future reduced").removeClass("current")
+    current.prev().prev().addClass("past reduced").removeClass("far-past")
+  }
+}
 function next() {
-  $($(".slides").children()[0]).removeClass("current")
-  $($(".slides").children()[0]).addClass("past reduced")
-  $($(".slides").children()[1]).removeClass("future reduced")
-  $($(".slides").children()[1]).addClass("current")
+  var current = $(".current")
+  if( current.next().length != 0)  {
+    current.next().removeClass("future reduced").addClass("current")
+    current.prev().removeClass("past reduced").addClass("far-past")
+    current.next().next().addClass("future reduced").removeClass("far-future")
+    current.addClass("past reduced").removeClass("current")
+  }
 }
 function create_note(item) {
   $("#slide_"+item.slide_id).find(".slide_inner").append(
@@ -190,7 +189,6 @@ function grey_border(note) {
   $(note).css("border-color", "rgba(55, 25, 25, 0.8)");
 }
 function setCurrent() {
-  $($(".slides").children()[0]).addClass("current")
-  $($(".slides").children()[0]).removeClass("future past reduced")
-  $($(".slides").children()[1]).addClass("future reduced")
+  $($(".slide")[0]).addClass("current")
+  $($(".slide")[1]).addClass("future reduced")
 }
