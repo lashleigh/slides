@@ -20,7 +20,6 @@ $(function() {
         current_slide = group_results.rows.item(i);
         $(".slides").append(
         '<div id="slide_'+current_slide.slide_id+'" class="slide">'+
-          '<div id="mask_'+current_slide.slide_id+'" class="creation_mask"></div>'+
           '<div class="slide_inner"> </div>'+
         '</div>');
         t.executeSql('SELECT * FROM notes WHERE visible=1 AND slide_id=?', [current_slide.slide_id], function(t, results) { 
@@ -58,7 +57,7 @@ $(function() {
   $(".resizable").livequery( function() {
     $(this).resizable({
       //grid: [460, 290], there is no snap tolerance it just makes the resizing space discrete
-      handles: 'n, e, s, w, ne, nw, se, sw',
+      handles: 'ne, nw, se, sw, n, e, s, w',
       containment: "parent",
       resize: function(event, ui) {
         $(this).find('.preview').css("width",(ui.size.width)+"px");
@@ -95,9 +94,10 @@ $(function() {
     $("#note_"+id).hide();
   });
 
-  $(".creation_mask").live("dblclick", function(event) {
+  $(".slide_inner").live("dblclick", function(event) {
+    var id = parseInt($(this).parent().attr("id").split("_")[1]);
     db.transaction( function(t) {
-      t.executeSql('INSERT INTO notes (content, top, left, slide_id) VALUES (?, ?, ?, ?)', ["New box", event.layerY, event.layerX, parseInt(event.target.id.split("_")[1])]);
+      t.executeSql('INSERT INTO notes (content, top, left, slide_id) VALUES (?, ?, ?, ?)', ["New box", event.layerY, event.layerX, id]);
       t.executeSql('SELECT * FROM notes', [], function(t, results) {
         var last = results.rows.length;
         create_note(results.rows.item(last-1));    
@@ -105,9 +105,10 @@ $(function() {
     });
   });
 
-  $(".note").live("dblclick", function() {
+  $(".note").live("dblclick", function(event) {
     $(this).find(".preview").hide();
     $(this).find(".edit_area").show().focus();
+    event.stopPropagation();
   });
 
   $(".note").live("focusout", function(event) {

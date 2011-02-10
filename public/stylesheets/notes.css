@@ -153,11 +153,6 @@ a.delete {
   width: 840px;
   height: 640px;
 }
-.creation_mask {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-}
 .edit_area::-webkit-scrollbar {
   width: 6px;
   height: 6px;
