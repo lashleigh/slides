@@ -137,19 +137,19 @@ function handleKeys(e) {
 function prev() {
   var current = $(".current")
   if (current.prev().length != 0) {
-    current.prev().removeClass("past reduced").addClass("current")
-    current.next().removeClass("future reduced").addClass("far-future reduced")
-    current.addClass("future reduced").removeClass("current")
-    current.prev().prev().addClass("past reduced").removeClass("far-past")
+    current.prev().removeClass("reduced past").addClass("current")
+    current.next().removeClass("future").addClass("far-future")
+    current.addClass("reduced future").removeClass("current")
+    current.prev().prev().addClass("past").removeClass("far-past")
   }
 }
 function next() {
   var current = $(".current")
   if( current.next().length != 0)  {
     current.next().removeClass("future reduced").addClass("current")
-    current.prev().removeClass("past reduced").addClass("far-past reduced")
+    current.prev().removeClass("past").addClass("far-past")
     current.next().next().addClass("future reduced").removeClass("far-future")
-    current.addClass("past reduced").removeClass("current")
+    current.addClass("reduced past").removeClass("current")
   }
 }
 function create_note(item) {
@@ -190,5 +190,8 @@ function grey_border(note) {
 }
 function setCurrent() {
   $($(".slide")[0]).addClass("current")
-  $($(".slide")[1]).addClass("future reduced")
+  $($(".slide")[1]).addClass("reduced future")
+  for( i = 2; i < $(".slides").children().length; i++) {
+    $($(".slide")[i]).addClass("reduced far-future")
+  }
 }
