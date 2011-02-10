@@ -9,7 +9,8 @@ $(function() {
                  '(id integer primary key, content, '+
                   'width DEFAULT 200, height DEFAULT 100, '+
                   'top DEFAULT 20, left DEFAULT 20, '+
-                  'classes, slide_id)');
+                  'visible DEFAULT 1, '+
+                  'classes DEFAULT "note", slide_id)');
     t.executeSql('CREATE TABLE IF NOT EXISTS slides (id integer primary key, scripts, classes DEFAULT "slide")');
 
     t.executeSql('SELECT slide_id FROM notes GROUP BY slide_id order by slide_id ASC', [], function (tx, group_results) {
@@ -20,7 +21,7 @@ $(function() {
           '<div id="mask_'+current_slide.slide_id+'" class="creation_mask"></div>'+
           '<div class="slide_inner"> </div>'+
         '</div>');
-        t.executeSql('SELECT * FROM notes WHERE slide_id=?', [current_slide.slide_id], function(t, results) { 
+        t.executeSql('SELECT * FROM notes WHERE visible=1 AND slide_id=?', [current_slide.slide_id], function(t, results) { 
           var len = results.rows.length;
           for (j = 0; j < len; j++) {
             create_note(results.rows.item(j));
@@ -83,12 +84,12 @@ $(function() {
   $(".info").live("click", function() {
     var id = parseInt($(this).attr("id").split("_")[1]);
     db.transaction( function(t) {
-      t.executeSql('DELETE FROM notes WHERE id=?', [id]);
+      t.executeSql('UPDATE notes SET visible=0 WHERE id=?', [id]);
     });
     $("#note_"+id).hide();
   });
 
-  $(".creation_mask").dblclick( function(event) {
+  $(".creation_mask").live("dblclick", function(event) {
           console.log(event);
     db.transaction( function(t) {
       t.executeSql('INSERT INTO notes (content, top, left, slide_id) VALUES (?, ?, ?, ?)', ["New box", event.layerY, event.layerX, parseInt(event.target.id.split("_")[1])]);
@@ -98,21 +99,11 @@ $(function() {
       });
     });
   });
-  /*$(".creation_mask").click( function(event) {
-    $(".preview").show();
-    prettify();
-    $(".edit_area").hide();
-  });*/
 
   $(".note").live("dblclick", function() {
     $(this).find(".preview").hide();
     $(this).find(".edit_area").show().focus();
   });
-  // Prettify won't work for live syntax highlighting because it depends on <pre> tags which
-  // aren't present in the textile.
-  /*$(".edit_area").live("keyup", function() {
-    prettify();
-  });*/
 
   $(".note").live("focusout", function(event) {
     var textarea = $(this).find(".edit_area").val();
@@ -144,7 +135,7 @@ function create_note(item) {
 
 }
 function get_classes(item) {
-  return '"note '+item.classes+' resizable draggable"';
+  return '"resizable draggable '+item.classes+'"';
 }
 function style_string(item) {
   return '"width:'+item.width+'px;height:'+item.height+'px;top:'+item.top+'px;left:'+item.left+'px;"'
