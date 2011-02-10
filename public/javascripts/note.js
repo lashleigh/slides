@@ -5,7 +5,11 @@ var j;
 $(function() {
   db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
   db.transaction( function (t) {
-    t.executeSql('CREATE TABLE IF NOT EXISTS notes (id integer primary key, content, width DEFAULT 200, height DEFAULT 100, top DEFAULT 20, left DEFAULT 20, classes, slide_id)');
+    t.executeSql('CREATE TABLE IF NOT EXISTS notes '+
+                 '(id integer primary key, content, '+
+                  'width DEFAULT 200, height DEFAULT 100, '+
+                  'top DEFAULT 20, left DEFAULT 20, '+
+                  'classes, slide_id)');
     t.executeSql('CREATE TABLE IF NOT EXISTS slides (id integer primary key, scripts, classes DEFAULT "slide")');
 
     t.executeSql('SELECT slide_id FROM notes GROUP BY slide_id order by slide_id ASC', [], function (tx, group_results) {
@@ -52,8 +56,8 @@ $(function() {
       resize: function(event, ui) {
         $(this).find('.preview').css("width",(ui.size.width)+"px");
         $(this).find('.preview').css("height",(ui.size.height)+"px");
-        $(this).find('textarea').css("width",(ui.size.width)+"px");
-        $(this).find('textarea').css("height",(ui.size.height)+"px");
+        $(this).find('.edit_area').css("width",(ui.size.width)+"px");
+        $(this).find('.edit_area').css("height",(ui.size.height)+"px");
         show_borders_this_red(this);
       },
       stop: function(event, ui) {
@@ -97,27 +101,27 @@ $(function() {
   /*$(".creation_mask").click( function(event) {
     $(".preview").show();
     prettify();
-    $("textarea").hide();
+    $(".edit_area").hide();
   });*/
 
   $(".note").live("dblclick", function() {
     $(this).find(".preview").hide();
-    $(this).find("textarea").show().focus();
+    $(this).find(".edit_area").show().focus();
   });
   // Prettify won't work for live syntax highlighting because it depends on <pre> tags which
   // aren't present in the textile.
-  /*$("textarea").live("keyup", function() {
+  /*$(".edit_area").live("keyup", function() {
     prettify();
   });*/
 
   $(".note").live("focusout", function(event) {
-    var textarea = $(this).find("textarea").val();
+    var textarea = $(this).find(".edit_area").val();
     db.transaction( function(t) {
       t.executeSql('UPDATE notes SET content=? WHERE id=?', [textarea, parseInt(event.target.parentElement.id.split("_")[1])]);
     });
-    $(this).find(".preview").html(parse_textile($(this).find("textarea").val()));
+    $(this).find(".preview").html(parse_textile($(this).find(".edit_area").val()));
     $(this).find(".preview").show();
-    $(this).find("textarea").hide();
+    $(this).find(".edit_area").hide();
     prettify();
   });
 
@@ -133,9 +137,9 @@ function create_note(item) {
             '<textarea class="edit_area">'+item.content+'</textarea>'+ 
             '<a id="info_'+item.id+'" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a>'+
           '</div>');
-  $('#note_'+item.id).find("textarea").css("width", item.width);
-  $('#note_'+item.id).find("textarea").css("height", item.height);
-  $("textarea").css("display", "none");
+  $('#note_'+item.id).find(".edit_area").css("width", item.width);
+  $('#note_'+item.id).find(".edit_area").css("height", item.height);
+  $(".edit_area").css("display", "none");
   prettify();
 
 }
