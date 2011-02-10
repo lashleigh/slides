@@ -1,3 +1,5 @@
+var some;
+var someui;
 var db;
 var res;
 var i;
@@ -30,6 +32,19 @@ $(function() {
         });
       }
     setCurrent();
+    });
+  });
+
+  $(".slide").livequery( function() {
+    $(this).droppable({
+      accept: ".note",
+      tolerance: 'fit',
+      drop: function(event, ui) {
+      some = event;
+      someui = ui;
+        console.log(some);
+        console.log(someui);
+      }
     });
   });
 
@@ -90,7 +105,6 @@ $(function() {
   });
 
   $(".creation_mask").live("dblclick", function(event) {
-          console.log(event);
     db.transaction( function(t) {
       t.executeSql('INSERT INTO notes (content, top, left, slide_id) VALUES (?, ?, ?, ?)', ["New box", event.layerY, event.layerX, parseInt(event.target.id.split("_")[1])]);
       t.executeSql('SELECT * FROM notes', [], function(t, results) {
@@ -116,10 +130,28 @@ $(function() {
     prettify();
   });
 
-});
+  $(document).keydown( function(e) { handleKeys(e); }, false);
 
-function create_slide(slide_id) {
-  $(".presentation").append('<div id="slide_'+slide_id+'"></div>');
+});
+function handleKeys(e) {
+   switch (e.keyCode) {
+    case 37: // left arrow
+        setCurrent(); break;
+    case 39: // right arrow
+      next(); break;
+    case 32: // space
+      //this.next(); break;
+    case 50: // 2
+      //this.showNotes(); break;
+    case 51: // 3
+      //this.switch3D(); break;
+  }
+}
+function next() {
+  $($(".slides").children()[0]).removeClass("current")
+  $($(".slides").children()[0]).addClass("past reduced")
+  $($(".slides").children()[1]).removeClass("future reduced")
+  $($(".slides").children()[1]).addClass("current")
 }
 function create_note(item) {
   $("#slide_"+item.slide_id).find(".slide_inner").append(
@@ -132,8 +164,11 @@ function create_note(item) {
   $('#note_'+item.id).find(".edit_area").css("height", item.height);
   $(".edit_area").css("display", "none");
   prettify();
-
 }
+// note is not here explicitly because it is a default value.
+// It might be better to remove the default and place it explicity.
+// or find a way to always have that column contain at least the 
+// word note.
 function get_classes(item) {
   return '"resizable draggable '+item.classes+'"';
 }
@@ -155,7 +190,7 @@ function grey_border(note) {
   $(note).css("border-color", "rgba(55, 25, 25, 0.8)");
 }
 function setCurrent() {
-    console.log($(".slides").children());
   $($(".slides").children()[0]).addClass("current")
-  $($(".slides").children()[1]).addClass("future")
+  $($(".slides").children()[0]).removeClass("future past reduced")
+  $($(".slides").children()[1]).addClass("future reduced")
 }

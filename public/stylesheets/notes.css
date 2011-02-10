@@ -14,6 +14,7 @@ a.info img { width: 25px; }
   bottom: 18px;
 }
 body {
+  background: -webkit-gradient(radial, 430 50, 0, 430 50, 541, from(rgba(55, 55, 55, .9)), to(rgba(25, 25, 25, .9)));
   padding: 0;
   margin: 0;
   width: 100%;
@@ -34,7 +35,6 @@ p { margin: 10px; }
   -webkit-transition: -webkit-transform 1s ease-in-out;
 }
 .slide {
-  overflow: hidden;
   display: none;
   position: absolute;
   width: 960px;
@@ -42,10 +42,17 @@ p { margin: 10px; }
   left: 50%;
   top: 50%;
   margin-top: -310px;
-  background: -webkit-gradient(radial, 430 50, 0, 430 50, 541, from(white), to(#aaaaaa));
+  background: #eee;
+  -webkit-border-radius: 10px;
   -webkit-box-shadow: 0px 0px 9px black;
   -webkit-transition: margin 0.25s ease-in-out;
 }
+.reduced {
+  -webkit-transform: scale(0.9);
+  -moz-transform: scale(0.9);
+  -o-transform: scale(0.9);
+  transform: scale(0.9);
+} 
 .slide.far-past {
   display: block;
   margin-left: -2400px;
@@ -53,7 +60,7 @@ p { margin: 10px; }
 .slide.past {
   visibility: visible;
   display: block;
-  margin-left: -1400px;
+  margin-left: -1540px;
 }
 .slide.current {
   visibility: visible;
@@ -111,7 +118,6 @@ a.delete {
 }
 
 .slide_inner {
-  border: 1px dotted black;
   margin: 20px;
   width: 920px;
   height: 580px;
