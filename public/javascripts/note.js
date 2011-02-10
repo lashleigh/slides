@@ -37,7 +37,9 @@ $(function() {
 
   $(".draggable").livequery( function() {
     $(this).draggable({ 
-      snap: ".draggable, .slide_inner",
+      snap: ".draggable",
+      snapMode: "outer",
+      containment: "parent",
       opacity: 0.6,
       stack: ".note",
       drag: function(event, ui) {
@@ -56,6 +58,8 @@ $(function() {
   $(".resizable").livequery( function() {
     $(this).resizable({
       //grid: [460, 290], there is no snap tolerance it just makes the resizing space discrete
+      handles: 'n, e, s, w, ne, nw, se, sw',
+      containment: "parent",
       resize: function(event, ui) {
         $(this).find('.preview').css("width",(ui.size.width)+"px");
         $(this).find('.preview').css("height",(ui.size.height)+"px");

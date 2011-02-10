@@ -43,7 +43,7 @@ a.info img { width: 25px; }
   position: absolute;
   display: block;
   -webkit-transition: -webkit-transform 1.5s ease-in-out;
-  -webkit-transform: scale(0.9);
+  -webkit-transform: scale(1);
 }
 .slide {
   opacity: .35;
@@ -59,7 +59,6 @@ a.info img { width: 25px; }
   -webkit-transition-property: margin, -webkit-transform, opacity;
   -webkit-transition-duration: 0.3s, 0.3s, 0.3s;
   -webkit-transition-timing-function: ease-in-out;
-  -webkit-transition: all 0.25s ease-in-out;
   -webkit-transform: scale(0.8);
 }
 .slide:nth-child(even) {
@@ -147,9 +146,12 @@ a.delete {
 }
 
 .slide_inner {
-  margin: 20px;
-  width: 860px;
-  height: 660px;
+  border: 1px dashed #444;
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  width: 840px;
+  height: 640px;
 }
 .creation_mask {
   position: absolute;
