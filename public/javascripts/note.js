@@ -138,7 +138,7 @@ function prev() {
   var current = $(".current")
   if (current.prev().length != 0) {
     current.prev().removeClass("past reduced").addClass("current")
-    current.next().removeClass("future reduced").addClass("far-future")
+    current.next().removeClass("future reduced").addClass("far-future reduced")
     current.addClass("future reduced").removeClass("current")
     current.prev().prev().addClass("past reduced").removeClass("far-past")
   }
@@ -147,7 +147,7 @@ function next() {
   var current = $(".current")
   if( current.next().length != 0)  {
     current.next().removeClass("future reduced").addClass("current")
-    current.prev().removeClass("past reduced").addClass("far-past")
+    current.prev().removeClass("past reduced").addClass("far-past reduced")
     current.next().next().addClass("future reduced").removeClass("far-future")
     current.addClass("past reduced").removeClass("current")
   }

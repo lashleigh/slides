@@ -1,3 +1,25 @@
+body {
+  font: 20px "Lucida Grande", "Trebuchet MS", Verdana, sans-serif;
+  background: rgba(25, 25, 25, .9);
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0px; top: 0px;
+}
+body::-webkit-scrollbar { display: none; }
+p { margin: 10px; }
+.presentation {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  left: 0px;
+  top: 0px;
+  display: block;
+  overflow: hidden;
+  background: #778;
+}
 a.info {
   display: none;
   position: absolute;
@@ -13,25 +35,13 @@ a.info img { width: 25px; }
   right: 18px !important;
   bottom: 18px;
 }
-body {
-  background: rgba(25, 25, 25, .9);
-  padding: 0;
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  left: 0px; top: 0px;
-}
-body::-webkit-scrollbar { display: none; }
-p { margin: 10px; }
-.presentation {
-}
 .slides {
   width: 100%;
   height: 100%;
   left: 0;
   top: 0;
   position: absolute;
+  display: block;
   -webkit-transition: -webkit-transform 1s ease-in-out;
 }
 .slide {
@@ -44,13 +54,28 @@ p { margin: 10px; }
   top: 50%;
   margin-top: -350px;
   background: #eee;
-  -webkit-border-radius: 10px;
   -webkit-box-shadow: 0px 0px 9px black;
-  -webkit-transition: margin 0.25s ease-in-out;
+  background: -webkit-gradient(linear, left bottom, left top, from(#bbd), to(#fff));
+  -webkit-transition: all 0.25s ease-in-out;
   -webkit-transform: scale(1);
 }
+.slide:nth-child(even) {
+  -moz-border-radius: 20px 0;
+  -khtml-border-radius: 20px 0;
+  border-radius: 20px 0; /* includes Opera 10.5+ */
+  -webkit-border-top-left-radius: 20px;
+  -webkit-border-bottom-right-radius: 20px;
+}
+
+.slide:nth-child(odd) {
+  -moz-border-radius: 0 20px;
+  -khtml-border-radius: 0 20px;
+  border-radius: 0 20px;
+  -webkit-border-top-right-radius: 20px;
+  -webkit-border-bottom-left-radius: 20px;
+}
 .reduced {
-  -webkit-transform: scale(1);
+  -webkit-transform: scale(0.8);
 } 
 .slide.far-past {
   display: block;
