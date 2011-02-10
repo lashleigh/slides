@@ -12,7 +12,7 @@ $(function() {
       for (i = 0; i < group_results.rows.length; i++) {
         current_slide = group_results.rows.item(i);
         $(".slides").append(
-        '<div id="slide_'+current_slide.slide_id+'" class="slide current">'+
+        '<div id="slide_'+current_slide.slide_id+'" class="slide">'+
           '<div id="mask_'+current_slide.slide_id+'" class="creation_mask"></div>'+
           '<div class="slide_inner"> </div>'+
         '</div>');
@@ -24,6 +24,7 @@ $(function() {
         clear_borders();
         });
       }
+    setCurrent();
     });
   });
 
@@ -126,7 +127,6 @@ function create_slide(slide_id) {
   $(".presentation").append('<div id="slide_'+slide_id+'"></div>');
 }
 function create_note(item) {
-  //$(".slide_inner").append('<div id='+item.id+' class='+get_classes(item)+' style='+style_string(item)+'></did>');
   $("#slide_"+item.slide_id).find(".slide_inner").append(
           '<div id=note_'+item.id+' class='+get_classes(item)+' style='+style_string(item)+'>'+
             '<div class="preview">'+parse_textile(item.content)+'</div>'+
@@ -158,4 +158,9 @@ function clear_borders() {
 }
 function grey_border(note) {
   $(note).css("border-color", "rgba(55, 25, 25, 0.8)");
+}
+function setCurrent() {
+    console.log($(".slides").children());
+  $($(".slides").children()[0]).addClass("current")
+  $($(".slides").children()[1]).addClass("future")
 }
