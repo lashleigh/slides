@@ -1,6 +1,7 @@
 var db;
 var res;
 var i;
+var j;
 $(function() {
   db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
   db.transaction( function (t) {
@@ -10,9 +11,10 @@ $(function() {
     t.executeSql('SELECT slide_id FROM notes GROUP BY slide_id order by slide_id ASC', [], function (tx, group_results) {
       for (i = 0; i < group_results.rows.length; i++) {
         t.executeSql('SELECT * FROM notes WHERE slide_id=?', [group_results.rows.item(i).slide_id], function(t, results) { 
-          var len = results.rows.length, i;
-          for (i = 0; i < len; i++) {
-            create_note(results.rows.item(i));
+          var len = results.rows.length;
+          for (j = 0; j < len; j++) {
+            console.log(results.rows.item(j));
+            create_note(results.rows.item(j));
           }
         clear_borders();
         });
@@ -77,8 +79,9 @@ $(function() {
   });
 
   $(".creation_mask").dblclick( function(event) {
+          console.log(event);
     db.transaction( function(t) {
-      t.executeSql('INSERT INTO notes (content, top, left, slide_id) VALUES (?, ?, ?, ?)', ["New box", event.layerY, event.layerX, 2]);
+      t.executeSql('INSERT INTO notes (content, top, left, slide_id) VALUES (?, ?, ?, ?)', ["New box", event.layerY, event.layerX, parseInt(event.target.id.split("_")[1])]);
       t.executeSql('SELECT * FROM notes', [], function(t, results) {
         var last = results.rows.length;
         create_note(results.rows.item(last-1));    
@@ -95,6 +98,11 @@ $(function() {
     $(this).find(".preview").hide();
     $(this).find("textarea").show().focus();
   });
+  // Prettify won't work for live syntax highlighting because it depends on <pre> tags which
+  // aren't present in the textile.
+  /*$("textarea").live("keyup", function() {
+    prettify();
+  });*/
 
   $(".note").live("focusout", function(event) {
     var textarea = $(this).find("textarea").val();
@@ -110,11 +118,11 @@ $(function() {
 });
 
 function create_slide(slide_id) {
-  $("#presentation").append('<div id="slide_'+slide_id+'"></div>');
+  $(".presentation").append('<div id="slide_'+slide_id+'"></div>');
 }
 function create_note(item) {
   //$(".slide_inner").append('<div id='+item.id+' class='+get_classes(item)+' style='+style_string(item)+'></did>');
-  $(".slide_inner").append('<div id=note_'+item.id+' class='+get_classes(item)+' style='+style_string(item)+'><div class="preview">'+parse_textile(item.content)+'</div><textarea class="edit_area">'+item.content+'</textarea> <a id="info_'+item.id+'" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a></div>');
+  $("#slide_"+item.slide_id).find(".slide_inner").append('<div id=note_'+item.id+' class='+get_classes(item)+' style='+style_string(item)+'><div class="preview">'+parse_textile(item.content)+'</div><textarea class="edit_area">'+item.content+'</textarea> <a id="info_'+item.id+'" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a></div>');
   $('#note_'+item.id).find("textarea").css("width", item.width);
   $('#note_'+item.id).find("textarea").css("height", item.height);
   $("textarea").css("display", "none");
