@@ -1,10 +1,14 @@
-var some;
-var someui;
 var db;
-var res;
 var i;
 var j;
+var uiWidth;
+var uiHeight;
+var uiTop;
+var uiLeft;
+var slideWidth; 
+var slideHeight;
 $(function() {
+
   db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
   db.transaction( function (t) {
     t.executeSql('CREATE TABLE IF NOT EXISTS notes '+
@@ -31,6 +35,8 @@ $(function() {
         });
       }
     setCurrent();
+    slideWidth = parseInt($(".slide_inner").css("width"));
+    slideHeight = parseInt($(".slide_inner").css("height"));
     });
   });
 
@@ -59,19 +65,39 @@ $(function() {
     $(this).resizable({
       //grid: [460, 290], there is no snap tolerance it just makes the resizing space discrete
       handles: 'ne, nw, se, sw, n, e, s, w',
-      containment: "parent",
+      containment: $(this).parent(),
       resize: function(event, ui) {
-        $(this).find('.preview').css("width",(ui.size.width)+"px");
-        $(this).find('.preview').css("height",(ui.size.height)+"px");
-        $(this).find('.edit_area').css("width",(ui.size.width)+"px");
-        $(this).find('.edit_area').css("height",(ui.size.height)+"px");
         show_borders_this_red(this);
+        uiWidth = ui.size.width;
+        uiLeft = ui.position.left;
+        uiHeight = ui.size.height;
+        uiTop = ui.position.top;
+        
+        if( ui.position.left <= 0) { 
+          uiWidth = ui.size.width+ui.position.left;
+          uiLeft = 0;
+        } 
+        if( (ui.position.left + ui.size.width) >= slideWidth ) { 
+          uiWidth = slideWidth - ui.position.left;
+        }
+        if( ui.position.top <= 0) {
+          uiHeight = ui.size.height+ui.position.top;
+          uiTop = 0;
+        } 
+        if( ui.position.top + ui.size.height > slideHeight ) {
+          uiHeight = slideHeight - ui.position.top;
+        }
+
+        $(this).find('.preview').css("width",(uiWidth)+"px");
+        $(this).find('.edit_area').css("width",(uiWidth)+"px");
+        $(this).find('.preview').css("height",(uiHeight)+"px");
+        $(this).find('.edit_area').css("height",(uiHeight)+"px");
       },
       stop: function(event, ui) {
         clear_borders();
         grey_border(this);
         db.transaction( function(t) {
-          t.executeSql('UPDATE notes SET width=?, height=? WHERE id=?', [ui.size.width, ui.size.height, parseInt(event.target.id.split("_")[1])]);
+          t.executeSql('UPDATE notes SET width=?, height=?, top=?, left=? WHERE id=?', [uiWidth, uiHeight, uiTop, uiLeft, parseInt(event.target.id.split("_")[1])]);
         });
         prettify();
       }

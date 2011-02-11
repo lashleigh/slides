@@ -28,6 +28,9 @@ a.info {
   right: -4px;
 }
 a.info img { width: 25px; }
+textarea {
+  resize: none;
+}
 .ui-resizable-handle { opacity: 0; }
 .pink { color: #ff6ec7; }
 .options {
