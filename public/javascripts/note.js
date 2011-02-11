@@ -44,15 +44,31 @@ $(function() {
     $(this).draggable({ 
       snap: ".note",
       snapMode: "outer",
-      containment: "parent",
+      containment: $(this).parent(),
       opacity: 0.6,
       stack: ".note",
       drag: function(event, ui) {
         show_borders_this_red(this);
+        var thisWidth = parseInt($(this).css("width"));
+        var thisHeight = parseInt($(this).css("height"));
+        uiLeft = ui.position.left;
+        uiTop = ui.position.top;
+        if( ui.position.left < 0) {console.log(ui.position.left);}
+        if( ui.position.left+thisWidth >= slideWidth) {
+          uiLeft = slideWidth - thisWidth;
+        }
+        if( uiTop + thisHeight >= slideHeight ) {
+          uiTop = slideHeight - thisHeight;
+          console.log(uiTop);
+        }
+        $(this).css("left", uiLeft+"px");
+        $(this).css("top", uiTop+"px");
       },
       stop: function(event, ui) {
+        $(this).css("left", uiLeft+"px");
+        $(this).css("top", uiTop+"px");
         db.transaction( function(t) {
-          t.executeSql('UPDATE notes SET top=?, left=? WHERE id=?', [ui.position.top, ui.position.left, parseInt(event.target.id.split("_")[1])]);
+          t.executeSql('UPDATE notes SET top=?, left=? WHERE id=?', [uiTop, uiLeft, parseInt(event.target.id.split("_")[1])]);
         });
         var current = $(this)
         clear_borders();
@@ -73,14 +89,14 @@ $(function() {
         uiHeight = ui.size.height;
         uiTop = ui.position.top;
         
-        if( ui.position.left <= 0) { 
+        if( ui.position.left < 0) { 
           uiWidth = ui.size.width+ui.position.left;
           uiLeft = 0;
         } 
-        if( (ui.position.left + ui.size.width) >= slideWidth ) { 
+        if( (ui.position.left + ui.size.width) > slideWidth ) { 
           uiWidth = slideWidth - ui.position.left;
         }
-        if( ui.position.top <= 0) {
+        if( ui.position.top < 0) {
           uiHeight = ui.size.height+ui.position.top;
           uiTop = 0;
         } 
