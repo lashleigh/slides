@@ -120,6 +120,8 @@ $(function() {
     });
   });
 
+  $(".future").live("click", function() { next(); });
+  $(".past").live("click", function() { prev(); });
   $(".note").live("mouseenter", function() {
     $(this).find(".info").show();
     grey_border(this);
@@ -155,31 +157,49 @@ $(function() {
   });
 
   $(".note").live("focusout", function(event) {
-    var edit_area_content = $(this).find(".edit_area").val();
-    db.transaction( function(t) {
-      t.executeSql('UPDATE notes SET content=? WHERE id=?', [edit_area_content, parseInt(event.target.parentElement.id.split("_")[1])]);
-    });
-    $(this).find(".preview").html(parse_textile($(this).find(".edit_area").val()));
-    $(this).find(".preview").show();
-    $(this).find(".edit_area").hide();
-    prettify();
+          console.log(this);
+    updateDB($(this));
   });
 
-  $(document).keydown( function(e) { handleKeys(e); }, false);
+  $(document).keydown( function(e) {
+    if( $(e.srcElement).hasClass("edit_area")) { 
+      handleEdit(e);
+    } else {
+      handleKeys(e); 
+    }
+  }, false);
 
 });
+function updateDB(some_note) {
+  var edit_area_content = $(some_note).find(".edit_area").val();
+  db.transaction( function(t) {
+    t.executeSql('UPDATE notes SET content=? WHERE id=?', [edit_area_content, parseInt($(some_note).attr("id").split("_")[1])]);
+  });
+  $(some_note).find(".preview").html(linen($(some_note).find(".edit_area").val()));
+  $(some_note).find(".preview").show();
+  $(some_note).find(".edit_area").hide();
+  prettify();
+}
+
+function handleEdit(e) {
+  switch (e.keyCode) {
+    case 27:
+      updateDB($(e.srcElement).parent()); break
+      //updateDB(); break
+  }
+}
 function handleKeys(e) {
-   switch (e.keyCode) {
-    case 37: // left arrow
-      prev(); break;
-    case 39: // right arrow
-      next(); break;
-    case 32: // space
-      //this.next(); break;
-    case 50: // 2
-      //this.showNotes(); break;
-    case 51: // 3
-      //this.switch3D(); break;
+ switch (e.keyCode) {
+   case 37: // left arrow
+     prev(); break;
+   case 39: // right arrow
+     next(); break;
+   case 32: // space
+     //this.next(); break;
+   case 50: // 2
+     //this.showNotes(); break;
+   case 51: // 3
+     //this.switch3D(); break;
   }
 }
 function prev() {
@@ -203,7 +223,7 @@ function next() {
 function create_note(item) {
   $("#slide_"+item.slide_id).find(".slide_inner").append(
           '<div id=note_'+item.id+' class='+get_classes(item)+' style='+style_string(item)+'>'+
-            '<div class="preview">'+parse_textile(item.content)+'</div>'+
+            '<div class="preview">'+linen(item.content)+'</div>'+
             '<textarea class="edit_area">'+item.content+'</textarea>'+ 
             '<a id="info_'+item.id+'" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a>'+
           '</div>');
