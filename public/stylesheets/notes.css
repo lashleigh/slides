@@ -1,18 +1,18 @@
 #progressContainer {
     position: absolute;
-    width: 840px;
+    width: 820px;
     height: 25px;
     left: 50%;
     top: 750px;
-    margin-left: -430px;
+    margin-left: -410px;
 }
 #progressEye {
     position: relative;
     top: 0px;
-    left: 0px;
-    width: 25px;
-    height: 25px;
-    background-image: -webkit-gradient(radial, center center, 0, center center, 15, from(red), to(black));
+    left: -13px;
+    width: 26px;
+    height: 26px;
+    background-image: -webkit-gradient(radial, center center, 0, center center, 16, from(red), to(black));
   -webkit-transition: -webkit-transition-left 3s ease-out;
 }
 body {
