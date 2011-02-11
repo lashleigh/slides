@@ -7,6 +7,7 @@ var uiTop;
 var uiLeft;
 var slideWidth; 
 var slideHeight;
+var cylonOffset;
 $(function() {
 
   db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
@@ -35,8 +36,9 @@ $(function() {
         });
       }
     setCurrent();
-    slideWidth = parseInt($(".slide_inner").css("width"));
+    slideWidth = $(".slide_inner").width();
     slideHeight = parseInt($(".slide_inner").css("height"));
+    cylonOffset = $("#progressContainer").width() / ($(".slide").length-1);
     });
   });
 
@@ -202,21 +204,25 @@ function handleKeys(e) {
 function prev() {
   var current = $(".current")
   if (current.prev().length != 0) {
+      var str = "-="+cylonOffset
+    $("#progressEye").animate({left: str}, 600, "easeOutCubic");//, function() {moveFake("neg")});
     current.prev().removeClass("reduced past").addClass("current")
     current.next().removeClass("future").addClass("far-future")
     current.addClass("reduced future").removeClass("current")
     current.prev().prev().addClass("past").removeClass("far-past")
   }
 }
+
 function next() {
   var current = $(".current")
   if( current.next().length != 0)  {
+      var str = "+="+cylonOffset
+    $("#progressEye").animate({left: str}, 600, "easeOutCubic");//, function() {moveFake("pos")});
     current.next().removeClass("future reduced").addClass("current")
     current.prev().removeClass("past").addClass("far-past")
     current.next().next().addClass("future reduced").removeClass("far-future")
     current.addClass("reduced past").removeClass("current")
   }
-  console.log($("#reddot"));
 }
 function create_note(item) {
   $("#slide_"+item.slide_id).find(".slide_inner").append(
