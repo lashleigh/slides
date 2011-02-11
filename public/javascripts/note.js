@@ -19,14 +19,14 @@ $(function() {
                   'classes DEFAULT "note", slide_id)');
     t.executeSql('CREATE TABLE IF NOT EXISTS slides (id integer primary key, scripts, classes DEFAULT "slide")');
 
-    t.executeSql('SELECT slide_id FROM notes GROUP BY slide_id order by slide_id ASC', [], function (tx, group_results) {
+    t.executeSql('SELECT id FROM slides', [], function (tx, group_results) {
       for (i = 0; i < group_results.rows.length; i++) {
         current_slide = group_results.rows.item(i);
         $(".slides").append(
-        '<div id="slide_'+current_slide.slide_id+'" class="slide">'+
+        '<div id="slide_'+current_slide.id+'" class="slide">'+
           '<div class="slide_inner"> </div>'+
         '</div>');
-        t.executeSql('SELECT * FROM notes WHERE visible=1 AND slide_id=?', [current_slide.slide_id], function(t, results) { 
+        t.executeSql('SELECT * FROM notes WHERE visible=1 AND slide_id=?', [current_slide.id], function(t, results) { 
           var len = results.rows.length;
           for (j = 0; j < len; j++) {
             create_note(results.rows.item(j));
@@ -53,13 +53,11 @@ $(function() {
         var thisHeight = parseInt($(this).css("height"));
         uiLeft = ui.position.left;
         uiTop = ui.position.top;
-        if( ui.position.left < 0) {console.log(ui.position.left);}
         if( ui.position.left+thisWidth >= slideWidth) {
           uiLeft = slideWidth - thisWidth;
         }
         if( uiTop + thisHeight >= slideHeight ) {
           uiTop = slideHeight - thisHeight;
-          console.log(uiTop);
         }
         $(this).css("left", uiLeft+"px");
         $(this).css("top", uiTop+"px");
@@ -157,7 +155,6 @@ $(function() {
   });
 
   $(".note").live("focusout", function(event) {
-          console.log(this);
     updateDB($(this));
   });
 
@@ -194,9 +191,9 @@ function handleKeys(e) {
      prev(); break;
    case 39: // right arrow
      next(); break;
-   case 32: // space
+   case 80: // P 
      //this.next(); break;
-   case 50: // 2
+   case 69: // E
      //this.showNotes(); break;
    case 51: // 3
      //this.switch3D(); break;
@@ -219,6 +216,7 @@ function next() {
     current.next().next().addClass("future reduced").removeClass("far-future")
     current.addClass("reduced past").removeClass("current")
   }
+  console.log($("#reddot"));
 }
 function create_note(item) {
   $("#slide_"+item.slide_id).find(".slide_inner").append(
