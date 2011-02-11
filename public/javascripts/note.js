@@ -45,8 +45,8 @@ $(function() {
       snap: ".note",
       snapMode: "outer",
       containment: $(this).parent(),
+      refreshPositions: true,
       opacity: 0.6,
-      stack: ".note",
       drag: function(event, ui) {
         show_borders_this_red(this);
         var thisWidth = parseInt($(this).css("width"));
