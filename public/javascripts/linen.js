@@ -17,8 +17,31 @@ var linen = (function() {
       }
 
       var list = lex_list(b);
-      // TODO: Handle attrs.  This will likely mean refactoring, or lots of pain. Who wrote this damn grammar, anyway?
-      return { type: list[0].type, extended: false, attrs: [], content: list };
+      // TODO: Handle attrs.  This will likely mean refactoring, or lots of
+      // pain. Who wrote this damn grammar, anyway?
+      return {
+        type: list[0].type,
+        extended: false,
+        attrs: [],
+        content: list
+      };
+    }
+
+    function lex_table(block) {
+      var lines = block.split("\n");
+      var ret = [];
+      for(var i in lines) {
+        var line = lines[i].replace(/^\|/, "").replace(/\|$/, "");
+        ret.push(line.split("|"));
+      }
+
+      // TODO: handle attrs
+      return {
+        type: 'table',
+        extended: false,
+        attrs: [],
+        content: ret
+      };
     }
 
     function lex_block(block) {
@@ -29,11 +52,14 @@ var linen = (function() {
       var i = 0, c = block[0];
       if(c == 'f' && block[i+1] == 'n') {
         // TODO: Implement footnotes properly
-        blockType = "f" + block[i+1];
+        blockType = "f" + block[++i];
       }
 
       // Lists are pretty different, so we'll treat them completely differently here.
       if(c == '*' || c == '#') { return handle_list(block) }
+
+      // Tables are also different, so they get their own function too.
+      if(c == '|') { return lex_table(block) }
 
       // Blockquotes and Blocks of code
       if(c == 'b') { blockType = 'b' + block[++i] }
@@ -43,7 +69,6 @@ var linen = (function() {
 
       // ps and pres
       if(c == "p") {
-        // TODO: Figure out why this is so broken
         if(block.slice(i, i+3) == 'pre') {
           i += 2;
           blockType = "pre";
@@ -97,7 +122,12 @@ var linen = (function() {
         else if(c == '.') {
           // See if it's an extended block (i.e. the terminator is '..')
           var isExtended = block[i+1] == '.';
-          return { type: blockType, extended: isExtended, attrs: res, content: block.slice(++i, block.length).trim() };
+          return {
+            type: blockType,
+            extended: isExtended,
+            attrs: res,
+            content: block.slice(++i, block.length).trim()
+          };
         }
 
         // This implies a sort of parse error.  Sadly, my understanding of the
@@ -113,51 +143,71 @@ var linen = (function() {
     var blocks = doc.split(/\n\n+/);
     var result = [];
     for(var i in blocks) {
-      result.push(lex_block(blocks[i]));
+      var lexed = lex_block(blocks[i]);
+      if(lexed) result.push(lexed);
     }
 
     return result;
   }
 
   function do_substitutions(text) {
-                // Punctuation
-    return text.replace(/--/, "&#8212;")
-               .replace(/\n/, "<br/>")
-               .replace(/"([^"]*)"/, "&#8220;$1&#8221;")
-               .replace(/'([^']*)'/, '&#8216;$1&#8217;')
-               .replace(/'/, "&#8217;")
-               .replace(/ - /, " &endash; ")
-               .replace(/\.\.\./, "&#8230;")
-               .replace(/\(r\)/, "&#174;")
-               .replace(/\(tm\)/, "&#8482;")
-               .replace(/\(c\)/, "&#169;")
+    // This is a simple substitution based system.  It might be worth
+    // considering implementing this with a real parser, but that does sound
+    // like a great deal of work.  For the most part, we can fake it with
+    // clever regex substitutions, but sometimes there's a danger of
+    // substituting something that we ought to be leaving alone (like, for
+    // example, a URL with underscores in it).
+
+
+    // TODO: Make a function to do attributes on sub-blocks, and apply it.
+
+               // We do quotes first because they are problematic. 
+    return text.replace(/(\W)"([^"]*)(\W)"/g, "$1&#8220;$2&#8221;$3")
+
+               // Links
+               .replace(/"([^"]+)":(http\S+)/g, "<a href=\"$2\">$1</a>")
+
+               // Images
+               .replace(/!([^!]+)!:(http\S+)/g, "<a href=\"$2\"><img src=\"$1\"/></a>")
+               .replace(/!([^!]+)!/g, "<img src=\"$1\"/>")
+
+               // Punctuation
+               .replace(/--/g, "&#8212;")
+               .replace(/\n/g, "<br/>")
+               .replace(/(\W)'([^']*)'(\W)/g, '$1&#8216;$2&#8217;$3')
+               .replace(/'/g, "&#8217;")
+               .replace(/ - /g, " &#8211; ")
+               .replace(/\.\.\./g, "&#8230;")
+               .replace(/\(r\)/g, "&#174;")
+               .replace(/\(tm\)/g, "&#8482;")
+               .replace(/\(c\)/g, "&#169;")
                // TODO: dimension sign
 
                // Acronyms
-               .replace(/([A-Z]{2,})\(([^)]+)\)/, "<acronym title=\"$2\">$1</acronym>")
-               .replace(/([A-Z]{2,})/, "<span class=\"caps\">$1</span>")
+               .replace(/([A-Z]{2,})\(([^)]+)\)/g, "<span class=\"caps\"><acronym title=\"$2\">$1</acronym></span>")
+               .replace(/([A-Z]{2,})/g, "<span class=\"caps\">$1</span>")
 
                // Citations
-               .replace(/\?\?([^\?]+)\?\?/, "<cite>$1</cite>")
+               .replace(/\?\?([^\?]+)\?\?/g, "<cite>$1</cite>")
+               //
+               // Spans
+               .replace(/%([^%]+)%/g, "<span>$1</span>")
 
                // Bolding
-               .replace(/\*([^\*]+)\*/, "<strong>$1</strong>")
-               .replace(/\*\*([^\*]+)\*\*/, "<b>$1</b>")
+               .replace(/\*([^\*]+)\*/g, "<strong>$1</strong>")
+               .replace(/\*\*([^\*]+)\*\*/g, "<b>$1</b>")
 
                // Italics
-               .replace(/_([^_]+)_/, "<em>$1</em>")
-               .replace(/__([^_]+)__/, "<i>$1</i>")
+               .replace(/\s+_([^_]+)_\s+/g, "<em>$1</em>")
+               .replace(/\s+__([^_]+)__\s+/g, "<i>$1</i>")
 
                // Insertions & Deletions
-               .replace(/\+([^\+]+)\+/, "<ins>$1</ins>")
-               .replace(/-([^-]+)-/, "<del>$1</del>")
+               .replace(/\+([^\+]+)\+/g, "<ins>$1</ins>")
+               .replace(/-([^-]+)-/g, "<del>$1</del>")
 
                // Insertions & Deletions
-               .replace(/\^([^\^]+)\^/, "<sup>$1</sup>")
-               .replace(/~([^~]+)~/, "<sub>$1</sub>");
-
-    // TODO: Links
-    // TODO: Images
+               .replace(/\^([^\^]+)\^/g, "<sup>$1</sup>")
+               .replace(/~([^~]+)~/g, "<sub>$1</sub>");
   }
 
   function parse(doc) {
@@ -205,10 +255,25 @@ var linen = (function() {
       };
     }
 
+    function parse_table(block) {
+      return {
+        type: "table",
+        content: block.content,
+        classes: "",
+        id: "",
+        lang: "",
+        style: "",
+        alignment: ""
+      };
+    }
+
     function parse_block(block) {
       // Shortcut out with a call to parse_list, which does a lot of special casing
       if(block.type == "ol" || block.type == "ul")
         return parse_list(block);
+
+      if(block.type == "table")
+        return parse_table(block);
 
       var obj = {
         type: block.type,
@@ -329,6 +394,19 @@ var linen = (function() {
                  b.content +
                "</pre>";
       }
+      function table(b) {
+        var ret = "<table " + html_attrs(b) + ">";
+        for(var i in b.content) {
+          var line = b.content[i];
+          ret += "<tr>";
+          for(var j in line) {
+            ret += "<td>" + line[j] + "</td>";
+          }
+          ret += "</tr>";
+        }
+        ret += "</table>";
+        return ret;
+      }
 
       function list(listObj) {
         function list_generator(items) {
@@ -374,6 +452,8 @@ var linen = (function() {
           return blockcode(block);
         case "pre":
           return preformatted(block);
+        case "table":
+          return table(block);
         case "ul":
         case "ol":
           return list(block);
@@ -386,13 +466,13 @@ var linen = (function() {
     return ret;
   }
 
-  // And finally, we'll export this outside this crazy scope. 
+  // And finally, we'll export this outside this crazy scope.
   return function(textile) { return generate_code(parse(lex(textile))) };
 })();
 
 // Export to let node.js and other CommonJS
 // compatible frameworks see our code:
-/*if(exports) {
+if(typeof exports != 'undefined') {
   exports.linen = linen;
   exports.textilize = linen;
-}*/
+}

@@ -202,12 +202,15 @@ function handleKeys(e) {
   }
 }
 function presentationMode() {
+    clear_borders();
+    $(".presentation").removeClass("editing_mode");
     $(".note").draggable("disable");
     $(".note").resizable("disable");    
     $(".note").removeClass("editable");
     $(".slide_inner").removeClass("creation_enabled");
 }
 function editingMode() {
+    $(".presentation").addClass("editing_mode");
     $(".note").draggable("enable");
     $(".note").resizable("enable");    
     $(".note").addClass("editable");
@@ -215,7 +218,7 @@ function editingMode() {
 }
 function prev() {
   var current = $(".current")
-  if (current.prev().length != 0) {
+  if (current.prev().attr("id")!= "progressContainer") {
       var str = "-="+cylonOffset
     $("#progressEye").animate({left: str}, 600, "easeOutCubic");//, function() {moveFake("neg")});
     current.prev().removeClass("reduced past").addClass("current")
@@ -233,14 +236,39 @@ function next() {
     current.next().removeClass("future reduced").addClass("current")
     current.prev().removeClass("past").addClass("far-past")
     current.next().next().addClass("future reduced").removeClass("far-future")
-    current.addClass("reduced past").removeClass("current")
+    current.addClass("reduced past").removeClass("current") 
+  } else if ( $(".presentation").hasClass("editing_mode")) {
+    // Create Slide and give it two notes
+    current.prev().removeClass("past").addClass("far-past")
+    current.next().next().addClass("future reduced").removeClass("far-future")
+    current.addClass("reduced past").removeClass("current") 
+    db.transaction( function(t) {
+      t.executeSql('INSERT INTO slides (classes) VALUES ("slide")');
+      t.executeSql('SELECT * FROM slides', [], function(t, results) {
+        var last = results.rows.length - 1;
+        var new_slide = results.rows.item(last);
+        console.log(new_slide);
+        $(".slides").append(
+        '<div id="slide_'+new_slide.id+'" class="slide current">'+
+          '<div class="slide_inner creation_enabled"> </div>'+
+        '</div>');
+        t.executeSql('INSERT INTO notes (content, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?)', ["h1. Header here", 0, 0, slideWidth, 100, new_slide.id]);
+        t.executeSql('INSERT INTO notes (content, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?)', ["Content and @code@ here", 200, 0, slideWidth, slideHeight - 200, new_slide.id]);
+        t.executeSql('SELECT * FROM notes', [], function(t, results) {
+          var last = results.rows.length;
+          create_note(results.rows.item(last-1));    
+          create_note(results.rows.item(last-2));    
+        });
+      });
+    });
   }
+
 }
 function create_note(item) {
   $("#slide_"+item.slide_id).find(".slide_inner").append(
           '<div id=note_'+item.id+' class='+get_classes(item)+' style='+style_string(item)+'>'+
-            '<div class="preview">'+linen(item.content)+'</div>'+
-            '<textarea class="edit_area">'+item.content+'</textarea>'+ 
+            '<div  class="preview">'+linen(item.content)+'</div>'+
+            '<textarea id="edit_'+item.id+'"class="edit_area">'+item.content+'</textarea>'+ 
             '<a id="info_'+item.id+'" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a>'+
           '</div>');
   $('#note_'+item.id).find(".edit_area").css("width", item.width);
@@ -268,6 +296,7 @@ function show_borders_this_red(note) {
 }
 function clear_borders() {
   $(".note").css("border-color", "rgba(25, 25, 25, 0.0)");
+  $(".info").hide();
 }
 function grey_border(note) {
   $(note).css("border-color", "rgba(55, 25, 25, 0.8)");
