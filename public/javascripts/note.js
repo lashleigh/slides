@@ -25,7 +25,7 @@ $(function() {
         current_slide = group_results.rows.item(i);
         $(".slides").append(
         '<div id="slide_'+current_slide.id+'" class="slide">'+
-          '<div class="slide_inner"> </div>'+
+          '<div class="slide_inner creation_enabled"> </div>'+
         '</div>');
         t.executeSql('SELECT * FROM notes WHERE visible=1 AND slide_id=?', [current_slide.id], function(t, results) { 
           var len = results.rows.length;
@@ -122,12 +122,12 @@ $(function() {
 
   $(".future").live("click", function() { next(); });
   $(".past").live("click", function() { prev(); });
-  $(".note").live("mouseenter", function() {
+  $(".editable").live("mouseenter", function() {
     $(this).find(".info").show();
     grey_border(this);
     //prettify();
   });
-  $(".note").live("mouseleave", function() {
+  $(".editable").live("mouseleave", function() {
     $(".info").hide();
     clear_borders()
   });
@@ -139,7 +139,7 @@ $(function() {
     $("#note_"+id).hide();
   });
 
-  $(".slide_inner").live("dblclick", function(event) {
+  $(".creation_enabled").live("dblclick", function newNote(event) {
     var id = parseInt($(this).parent().attr("id").split("_")[1]);
     db.transaction( function(t) {
       t.executeSql('INSERT INTO notes (content, top, left, slide_id) VALUES (?, ?, ?, ?)', ["New box", event.layerY, event.layerX, id]);
@@ -150,13 +150,13 @@ $(function() {
     });
   });
 
-  $(".note").live("dblclick", function(event) {
+  $(".editable").live("dblclick", function(event) {
     $(this).find(".preview").hide();
     $(this).find(".edit_area").show().focus();
     event.stopPropagation();
   });
 
-  $(".note").live("focusout", function(event) {
+  $(".editable").live("focusout", function(event) {
     updateDB($(this));
   });
 
@@ -194,12 +194,24 @@ function handleKeys(e) {
    case 39: // right arrow
      next(); break;
    case 80: // P 
-     //this.next(); break;
+     presentationMode(); break;
    case 69: // E
-     //this.showNotes(); break;
+     editingMode(); break;
    case 51: // 3
      //this.switch3D(); break;
   }
+}
+function presentationMode() {
+    $(".note").draggable("disable");
+    $(".note").resizable("disable");    
+    $(".note").removeClass("editable");
+    $(".slide_inner").removeClass("creation_enabled");
+}
+function editingMode() {
+    $(".note").draggable("enable");
+    $(".note").resizable("enable");    
+    $(".note").addClass("editable");
+    $(".slide_inner").addClass("creation_enabled");
 }
 function prev() {
   var current = $(".current")
@@ -241,7 +253,7 @@ function create_note(item) {
 // or find a way to always have that column contain at least the 
 // word note.
 function get_classes(item) {
-  return item.classes;
+  return "'note editable'";
 }
 function style_string(item) {
   return '"width:'+item.width+'px;height:'+item.height+'px;top:'+item.top+'px;left:'+item.left+'px;"'
