@@ -148,10 +148,10 @@ $(function() {
   $(".creation_enabled").live("dblclick", function newNote(event) {
     var id = parseInt($(this).parent().attr("id").split("_")[1]);
     db.transaction( function(t) {
-      t.executeSql('INSERT INTO notes (content, top, left, slide_id) VALUES (?, ?, ?, ?)', ["New box", event.layerY, event.layerX, id]);
-      t.executeSql('SELECT * FROM notes', [], function(t, results) {
-        var last = results.rows.length;
-        create_note(results.rows.item(last-1));    
+      t.executeSql('INSERT INTO notes (content, classes, top, left, slide_id) VALUES (?, ?, ?, ?, ?)', ["New box", "'note editable'", event.layerY, event.layerX, id], function(t, result) {
+        t.executeSql('SELECT * FROM notes WHERE id=?', [result.insertId], function(t, results) {
+          create_note(results.rows.item(0));    
+        });
       });
     });
   });
@@ -190,7 +190,6 @@ function handleEdit(e) {
   switch (e.keyCode) {
     case 27:
       updateDB($(e.srcElement).parent()); break
-      //updateDB(); break
   }
 }
 function handleKeys(e) {
@@ -269,13 +268,15 @@ function next() {
         '<div id="slide_'+new_slide_id+'" class="slide zoomed_in_slide current">'+
           '<div class="slide_inner creation_enabled"> </div>'+
         '</div>');
-        t.executeSql('INSERT INTO notes (content, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?)', ["h1. Header here", 0, 0, slideWidth, 100, new_slide_id], function(t, result) {
+        t.executeSql('INSERT INTO notes (content, classes, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          , ["h1. Header here", "'header note editable'", 0, 0, slideWidth, 100, new_slide_id], function(t, result) {
           var n_id= result.insertId;
           t.executeSql('SELECT * FROM notes WHERE id=?', [n_id], function(t, results) {
             create_note(results.rows.item(0));    
           });
         });
-        t.executeSql('INSERT INTO notes (content, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?)', ["Content here", 200, 0, slideWidth, slideHeight - 200, new_slide_id], function(t, result) {
+        t.executeSql('INSERT INTO notes (content, classes, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          ,  ["Content here", "'note editable'", 200, 0, slideWidth, slideHeight - 200, new_slide_id], function(t, result) {
           var n_id= result.insertId;
           t.executeSql('SELECT * FROM notes WHERE id=?', [n_id], function(t, results) {
             create_note(results.rows.item(0));    
@@ -304,7 +305,7 @@ function create_note(item) {
 // or find a way to always have that column contain at least the 
 // word note.
 function get_classes(item) {
-  return "'note editable'";
+  return item.classes;
 }
 function style_string(item) {
   return '"width:'+item.width+'px;height:'+item.height+'px;top:'+item.top+'px;left:'+item.left+'px;"'
