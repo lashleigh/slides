@@ -10,7 +10,6 @@ var slideWidth;
 var slideHeight;
 var cylonOffset;
 $(function() {
-
   db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
   db.transaction( function (t) {
     t.executeSql('CREATE TABLE IF NOT EXISTS notes '+
@@ -25,7 +24,7 @@ $(function() {
       for (i = 0; i < group_results.rows.length; i++) {
         current_slide = group_results.rows.item(i);
         $(".slides").append(
-        '<div id="slide_'+current_slide.id+'" class="slide">'+
+        '<div id="slide_'+current_slide.id+'" class="slide zoomed_in_slide">'+
           '<div class="slide_inner creation_enabled"> </div>'+
         '</div>');
         t.executeSql('SELECT * FROM notes WHERE visible=1 AND slide_id=?', [current_slide.id], function(t, results) { 
@@ -43,6 +42,11 @@ $(function() {
     });
   });
 
+    $("#slides").disableSelection();
+    $("#slides").sortable({
+      cursor: 'crosshair',
+      grid: [50, 20]
+    });
   $(".note").livequery( function() {
     $(this).draggable({ 
       snap: ".note",
@@ -77,6 +81,7 @@ $(function() {
       }
     });
   });
+  localStorage.setItem('slide_order', JSON.stringify({order: [1, 2, 3, 4, 5]}));
 
   $(".note").livequery( function() {
     $(this).resizable({
@@ -200,10 +205,22 @@ function handleKeys(e) {
      editingMode(); break;
    case 51: // 3
      //this.switch3D(); break;
+   case 83: //S
+     reorder_slides(); break;
   }
+}
+function reorder_slides() {
+    var keep_current = $(".current");
+    presentationMode();
+    $("#progressContainer").hide();
+    $(".slide").sortable("enable");
+    $(".slide").removeClass("zoomed_in_slide current reduced far-past past future far-future").addClass("zoomed_out_slide");
+}
+function display_slides() {
 }
 function presentationMode() {
     clear_borders();
+    $("#cue_box").hide();
     $(".presentation").removeClass("editing_mode");
     $(".note").draggable("disable");
     $(".note").resizable("disable");    
@@ -212,6 +229,7 @@ function presentationMode() {
 }
 function editingMode() {
     $(".presentation").addClass("editing_mode");
+    $("#cue_box").show();
     $(".note").draggable("enable");
     $(".note").resizable("enable");    
     $(".note").addClass("editable");
@@ -242,11 +260,13 @@ function next() {
     current.addClass("reduced past").removeClass("current") 
   } else if ( $(".presentation").hasClass("editing_mode")) {
     // Create Slide and give it two notes
+    current.prev().removeClass("past").addClass("far-past")
+    current.addClass("reduced past").removeClass("current") 
     db.transaction( function(t) {
       t.executeSql('INSERT INTO slides (classes) VALUES ("slide")', [], function(tx, result) {
         var new_slide_id = result.valueOf().insertId;
         $(".slides").append(
-        '<div id="slide_'+new_slide_id+'" class="slide current">'+
+        '<div id="slide_'+new_slide_id+'" class="slide zoomed_in_slide current">'+
           '<div class="slide_inner creation_enabled"> </div>'+
         '</div>');
         t.executeSql('INSERT INTO notes (content, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?)', ["h1. Header here", 0, 0, slideWidth, 100, new_slide_id], function(t, result) {
@@ -264,8 +284,6 @@ function next() {
       cylonOffset = $("#progressContainer").width() / ($(".slide").length - 1);
       });
     });
-    current.prev().removeClass("past").addClass("far-past")
-    current.addClass("reduced past").removeClass("current") 
   }
 
 }
@@ -309,7 +327,15 @@ function grey_border(note) {
 function setCurrent() {
   $($(".slide")[0]).addClass("current")
   $($(".slide")[1]).addClass("reduced future")
-  for( i = 2; i < $(".slides").children().length; i++) {
+  for( i = 2; i < $(".slide").length; i++) {
     $($(".slide")[i]).addClass("reduced far-future")
   }
+}
+
+function get_order_array() {
+  var id_array = [];
+  for(i = 0; i < $(".slide").length; i++) {
+    id_array.push(parseInt($($(".slide")[i]).attr("id").split("_")[1]));
+  }
+  localStorage.setItem('slide_order', JSON.stringify({order: id_array}));
 }

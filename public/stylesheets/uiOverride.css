@@ -29,3 +29,10 @@ bottom: -8px;
 .ui-state-disabled {
     opacity: 1.0;
 }
+.ui-resizable-handle { opacity: 0; }
+.ui-state-highlight { 
+    height: 700px; 
+    width: 900px;
+    -webkit-transform: scale(.3);
+}
+
