@@ -1,4 +1,5 @@
 var db;
+var res;
 var i;
 var j;
 var uiWidth;
@@ -225,6 +226,8 @@ function prev() {
     current.next().removeClass("future").addClass("far-future")
     current.addClass("reduced future").removeClass("current")
     current.prev().prev().addClass("past").removeClass("far-past")
+  } else if( $(".presentation").hasClass("editing_mode")) {
+    
   }
 }
 
@@ -239,28 +242,30 @@ function next() {
     current.addClass("reduced past").removeClass("current") 
   } else if ( $(".presentation").hasClass("editing_mode")) {
     // Create Slide and give it two notes
-    current.prev().removeClass("past").addClass("far-past")
-    current.next().next().addClass("future reduced").removeClass("far-future")
-    current.addClass("reduced past").removeClass("current") 
     db.transaction( function(t) {
-      t.executeSql('INSERT INTO slides (classes) VALUES ("slide")');
-      t.executeSql('SELECT * FROM slides', [], function(t, results) {
-        var last = results.rows.length - 1;
-        var new_slide = results.rows.item(last);
-        console.log(new_slide);
+      t.executeSql('INSERT INTO slides (classes) VALUES ("slide")', [], function(tx, result) {
+        var new_slide_id = result.valueOf().insertId;
         $(".slides").append(
-        '<div id="slide_'+new_slide.id+'" class="slide current">'+
+        '<div id="slide_'+new_slide_id+'" class="slide current">'+
           '<div class="slide_inner creation_enabled"> </div>'+
         '</div>');
-        t.executeSql('INSERT INTO notes (content, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?)', ["h1. Header here", 0, 0, slideWidth, 100, new_slide.id]);
-        t.executeSql('INSERT INTO notes (content, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?)', ["Content and @code@ here", 200, 0, slideWidth, slideHeight - 200, new_slide.id]);
-        t.executeSql('SELECT * FROM notes', [], function(t, results) {
-          var last = results.rows.length;
-          create_note(results.rows.item(last-1));    
-          create_note(results.rows.item(last-2));    
+        t.executeSql('INSERT INTO notes (content, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?)', ["h1. Header here", 0, 0, slideWidth, 100, new_slide_id], function(t, result) {
+          var n_id= result.insertId;
+          t.executeSql('SELECT * FROM notes WHERE id=?', [n_id], function(t, results) {
+            create_note(results.rows.item(0));    
+          });
         });
+        t.executeSql('INSERT INTO notes (content, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?)', ["Content here", 200, 0, slideWidth, slideHeight - 200, new_slide_id], function(t, result) {
+          var n_id= result.insertId;
+          t.executeSql('SELECT * FROM notes WHERE id=?', [n_id], function(t, results) {
+            create_note(results.rows.item(0));    
+          });
+        });
+      cylonOffset = $("#progressContainer").width() / ($(".slide").length - 1);
       });
     });
+    current.prev().removeClass("past").addClass("far-past")
+    current.addClass("reduced past").removeClass("current") 
   }
 
 }
