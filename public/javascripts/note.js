@@ -1,6 +1,7 @@
 var db;
 var res;
 var i, j;
+var uiLeft, uiTop, uiWidth, uiHeight;
 var slideWidth, slideHeight, cylonOffset;
 var slide_array = [];
 $(function() {
@@ -15,6 +16,98 @@ $(function() {
     n.create();
   }
   setCurrent();
+
+  $(".editable").live("dblclick", function(event) {
+    $(this).find(".preview").hide();
+    $(this).find(".edit_area").show().focus();
+    console.log(this);
+    event.stopPropagation();
+  });
+  $(".editable").live("focusout", function(event) {
+    var some_note = this;
+    var edit_area_content = $(some_note).find(".edit_area").val();
+    $(some_note).find(".preview").html(linen($(some_note).find(".edit_area").val()));
+    $(some_note).find(".preview").show();
+    $(some_note).find(".edit_area").hide();
+    prettify();
+  });
+  $(".editable").live("mouseenter", function() {
+    grey_border(this);
+    //prettify();
+  });
+  $(".editable").live("mouseleave", function() {
+    clear_borders()
+  });
+
+  $(".editable").livequery( function() {
+    $(this).draggable({ 
+      snap: ".note",
+      snapMode: "outer",
+      containment: $(this).parent(),
+      refreshPositions: true,
+      opacity: 0.6,
+      drag: function(event, ui) {
+        show_borders_this_red(this);
+        var thisWidth = parseInt($(this).css("width"));
+        var thisHeight = parseInt($(this).css("height"));
+        uiLeft = ui.position.left;
+        uiTop = ui.position.top;
+        if( ui.position.left+thisWidth >= slideWidth) {
+          uiLeft = slideWidth - thisWidth;
+        }
+        if( uiTop + thisHeight >= slideHeight ) {
+          uiTop = slideHeight - thisHeight;
+        }
+        $(this).css("left", uiLeft+"px");
+        $(this).css("top", uiTop+"px");
+      },
+      stop: function(event, ui) {
+        $(this).css("left", uiLeft+"px");
+        $(this).css("top", uiTop+"px");
+        clear_borders();
+        grey_border(this);
+      }
+    });
+  });
+
+ $(".editable").livequery( function() {
+    $(this).resizable({
+      //grid: [460, 290], there is no snap tolerance it just makes the resizing space discrete
+      handles: 'ne, nw, se, sw, n, e, s, w',
+      containment: $(this).parent(),
+      resize: function(event, ui) {
+        show_borders_this_red(this);
+        uiWidth = ui.size.width;
+        uiLeft = ui.position.left;
+        uiHeight = ui.size.height;
+        uiTop = ui.position.top;
+        
+        if( ui.position.left < 0) { 
+          uiWidth = ui.size.width+ui.position.left;
+          uiLeft = 0;
+        } 
+        if( (ui.position.left + ui.size.width) > slideWidth ) { 
+          uiWidth = slideWidth - ui.position.left;
+        }
+        if( ui.position.top < 0) {
+          uiHeight = ui.size.height+ui.position.top;
+          uiTop = 0;
+        } 
+        if( ui.position.top + ui.size.height > slideHeight ) {
+          uiHeight = slideHeight - ui.position.top;
+        }
+
+        $(this).find('.preview').css("width",(uiWidth)+"px");
+        $(this).find('.edit_area').css("width",(uiWidth)+"px");
+        $(this).find('.preview').css("height",(uiHeight)+"px");
+        $(this).find('.edit_area').css("height",(uiHeight)+"px");
+      },
+      stop: function(event, ui) {
+        clear_borders();
+        grey_border(this);
+      }
+    });
+  });
 
   $(".future").live("click", function() { next(); });
   $(".past").live("click", function() { prev(); });
@@ -160,7 +253,8 @@ function Slide(I) {
     var paper = I.paper;
     
     $("#"+I.raphael_id).dblclick( function(event) {
-      if( $(event.target).parent().attr("id") == I.raphael_id) {
+      if( $(event.target).hasClass("note") ){
+      } else if( $(event.target).parent().attr("id") == I.raphael_id) {
         n = Note();
         n.create(event, I.raphael_id);
         I.notes.push(n);
@@ -202,8 +296,7 @@ function Note(I) {
      n.top = event.offsetY;
      n.left = event.offsetX;
      n.content = "h1. Placeholder";
-     console.log(n);
-     $("#"+raphael_id).append('<div class="note" style="'+I.get_style()+'">'+I.content+'</div>');
+     $("#"+raphael_id).append('<div class="note editable" style="'+I.get_style()+'"><div class="preview">'+linen(I.content)+'</div><textarea class="edit_area">'+I.content+'</textarea></div>');
   }
   I.construct = function() {
   }
@@ -214,4 +307,20 @@ function Note(I) {
   }
 
   return I;
+}
+
+function show_borders_this_red(note) {
+  $(".note").css("border-color", "rgba(25, 25, 25, 0.5)");
+  $(note).css("border-color", "rgba(255, 25, 25, 0.8)");
+}
+function clear_borders() {
+  $(".note").css("border-color", "rgba(25, 25, 25, 0.0)");
+  $(".info").hide();
+}
+function grey_border(note) {
+  $(note).css("border-color", "rgba(55, 25, 25, 0.8)");
+}
+function prettify() {
+  $("pre").addClass("prettyprint");
+  prettyPrint();
 }
