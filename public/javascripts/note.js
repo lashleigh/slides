@@ -1,168 +1,27 @@
 var db;
 var res;
 var i, j;
-var uiWidth, uiHeight, uiTop, uiLeft;
 var slideWidth, slideHeight, cylonOffset;
+var slide_array = [];
 var paper;
 $(function() {
-  db = openDatabase('documents', '1.0', 'Local document storage', 5*1024*1024);
-  db.transaction( function (t) {
-    t.executeSql('CREATE TABLE IF NOT EXISTS notes '+
-                 '(id integer primary key, content, '+
-                  'width DEFAULT 200, height DEFAULT 100, '+
-                  'top DEFAULT 20, left DEFAULT 20, '+
-                  'visible DEFAULT 1, '+
-                  'classes DEFAULT "note", slide_id)');
-    t.executeSql('CREATE TABLE IF NOT EXISTS slides (id integer primary key, scripts, classes DEFAULT "slide")');
-
-    t.executeSql('SELECT id FROM slides', [], function (tx, group_results) {
-      for (i = 0; i < group_results.rows.length; i++) {
-        current_slide = group_results.rows.item(i);
-        $(".slides").append(
-        '<div id="slide_'+current_slide.id+'" class="slide zoomed_in_slide">'+
-          '<div id="raphael_'+current_slide.id+'" class="raphael"> </div>'+
-          '<div class="slide_inner creation_enabled"> </div>'+
-          '<textarea id="code_for_raphael_'+current_slide.id+'" class="code">Text for the textarea - why do you go away?</textarea>'+
-          '<div id="run_container"> <button class="run" type="button">Run</button> </div>'+
-        '</div>');
-        t.executeSql('SELECT * FROM notes WHERE visible=1 AND slide_id=?', [current_slide.id], function(t, results) { 
-          var len = results.rows.length;
-          for (j = 0; j < len; j++) {
-            create_note(results.rows.item(j));
-          }
-        clear_borders();
-        });
-      }
-    setCurrent();
-    slideWidth = $(".slide_inner").width();
-    slideHeight = parseInt($(".slide_inner").css("height"));
-    cylonOffset = $("#progressContainer").width() / ($(".slide").length-1);
-    });
-  });
-
-  $("#slides").disableSelection();
-  $(".note").livequery( function() {
-    $(this).draggable({ 
-      snap: ".note",
-      snapMode: "outer",
-      containment: $(this).parent(),
-      refreshPositions: true,
-      opacity: 0.6,
-      drag: function(event, ui) {
-        show_borders_this_red(this);
-        var thisWidth = parseInt($(this).css("width"));
-        var thisHeight = parseInt($(this).css("height"));
-        uiLeft = ui.position.left;
-        uiTop = ui.position.top;
-        if( ui.position.left+thisWidth >= slideWidth) {
-          uiLeft = slideWidth - thisWidth;
-        }
-        if( uiTop + thisHeight >= slideHeight ) {
-          uiTop = slideHeight - thisHeight;
-        }
-        $(this).css("left", uiLeft+"px");
-        $(this).css("top", uiTop+"px");
-      },
-      stop: function(event, ui) {
-        $(this).css("left", uiLeft+"px");
-        $(this).css("top", uiTop+"px");
-        db.transaction( function(t) {
-          t.executeSql('UPDATE notes SET top=?, left=? WHERE id=?', [uiTop, uiLeft, parseInt(event.target.id.split("_")[1])]);
-        });
-        var current = $(this)
-        clear_borders();
-        grey_border(this);
-      }
-    });
-  });
-  localStorage.setItem('slide_order', JSON.stringify({order: [1, 2, 3, 4, 5]}));
-
-  $(".note").livequery( function() {
-    $(this).resizable({
-      //grid: [460, 290], there is no snap tolerance it just makes the resizing space discrete
-      handles: 'ne, nw, se, sw, n, e, s, w',
-      containment: $(this).parent(),
-      resize: function(event, ui) {
-        show_borders_this_red(this);
-        uiWidth = ui.size.width;
-        uiLeft = ui.position.left;
-        uiHeight = ui.size.height;
-        uiTop = ui.position.top;
-        
-        if( ui.position.left < 0) { 
-          uiWidth = ui.size.width+ui.position.left;
-          uiLeft = 0;
-        } 
-        if( (ui.position.left + ui.size.width) > slideWidth ) { 
-          uiWidth = slideWidth - ui.position.left;
-        }
-        if( ui.position.top < 0) {
-          uiHeight = ui.size.height+ui.position.top;
-          uiTop = 0;
-        } 
-        if( ui.position.top + ui.size.height > slideHeight ) {
-          uiHeight = slideHeight - ui.position.top;
-        }
-
-        $(this).find('.preview').css("width",(uiWidth)+"px");
-        $(this).find('.edit_area').css("width",(uiWidth)+"px");
-        $(this).find('.preview').css("height",(uiHeight)+"px");
-        $(this).find('.edit_area').css("height",(uiHeight)+"px");
-      },
-      stop: function(event, ui) {
-        clear_borders();
-        grey_border(this);
-        db.transaction( function(t) {
-          t.executeSql('UPDATE notes SET width=?, height=?, top=?, left=? WHERE id=?', [uiWidth, uiHeight, uiTop, uiLeft, parseInt(event.target.id.split("_")[1])]);
-        });
-        prettify();
-      }
-    });
-  });
+  for(i = 0; i < 4; i++) {
+    $(".slides").append('<div id="slide_'+i+'" class="slide zoomed_in_slide">'+
+                     '<div id="raphael_'+i+'" class="raphael"> </div>'+
+                     '<textarea id="code_for_raphael_'+i+'" class="code">Text for the textarea - why do you go away?</textarea>'+
+                     '<div id="run_container"> <button class="run" type="button">Run</button> </div>'+
+                 '</div>');
+    var n = Slide()
+    slide_array.push(n);
+    n.create();
+    console.log(n);
+  }
+  setCurrent();
 
   $(".future").live("click", function() { next(); });
   $(".past").live("click", function() { prev(); });
-  $(".editable").live("mouseenter", function() {
-    $(this).find(".info").show();
-    grey_border(this);
-    //prettify();
-  });
-  $(".editable").live("mouseleave", function() {
-    $(".info").hide();
-    clear_borders()
-  });
-  $(".info").live("click", function() {
-    var id = parseInt($(this).attr("id").split("_")[1]);
-    db.transaction( function(t) {
-      t.executeSql('UPDATE notes SET visible=0 WHERE id=?', [id]);
-    });
-    $("#note_"+id).hide();
-  });
-
-  $(".creation_enabled").live("dblclick", function newNote(event) {
-    var id = parseInt($(this).parent().attr("id").split("_")[1]);
-    console.log(event);
-    db.transaction( function(t) {
-      t.executeSql('INSERT INTO notes (content, classes, top, left, slide_id) VALUES (?, ?, ?, ?, ?)', ["New box", "'note editable'", event.layerY, event.layerX, id], function(t, result) {
-        t.executeSql('SELECT * FROM notes WHERE id=?', [result.insertId], function(t, results) {
-          create_note(results.rows.item(0));    
-        });
-      });
-    });
-  });
-
-  $(".editable").live("dblclick", function(event) {
-    $(this).find(".preview").hide();
-    $(this).find(".edit_area").show().focus();
-    event.stopPropagation();
-  });
-
-  $(".editable").live("focusout", function(event) {
-    updateDB($(this));
-  });
 
   $(".run").live("click", function() {
-    console.log($($(this).parentsUntil(".slides")[1]).find(".raphael").attr("id"));
     var id = ($($(this).parentsUntil(".slides")[1]).find(".raphael").attr("id"));
     set_canvas(paper, id);
     localStorage.setItem('code_for_'+id, $("#code_for_"+id).val());
@@ -174,30 +33,13 @@ $(function() {
 
   $(document).keydown( function(e) {
     if( $(e.srcElement).hasClass("edit_area") || $(e.srcElement).hasClass("code")) { 
-      handleEdit(e);
     } else {
       handleKeys(e); 
     }
   }, false);
 
 });
-function updateDB(some_note) {
-  var edit_area_content = $(some_note).find(".edit_area").val();
-  db.transaction( function(t) {
-    t.executeSql('UPDATE notes SET content=? WHERE id=?', [edit_area_content, parseInt($(some_note).attr("id").split("_")[1])]);
-  });
-  $(some_note).find(".preview").html(linen($(some_note).find(".edit_area").val()));
-  $(some_note).find(".preview").show();
-  $(some_note).find(".edit_area").hide();
-  prettify();
-}
 
-function handleEdit(e) {
-  switch (e.keyCode) {
-    case 27:
-      updateDB($(e.srcElement).parent()); break
-  }
-}
 function handleKeys(e) {
  switch (e.keyCode) {
    case 37: // left arrow
@@ -214,31 +56,15 @@ function handleKeys(e) {
      reorder_slides(); break;
   }
 }
-function reorder_slides() {
-    var keep_current = $(".current");
-    presentationMode();
-    $("#progressContainer").hide();
-    $(".slide").sortable("enable");
-    $(".slide").removeClass("zoomed_in_slide current reduced far-past past future far-future").addClass("zoomed_out_slide");
-}
-function display_slides() {
-}
+
 function presentationMode() {
     clear_borders();
     $("#cue_box").hide();
     $(".presentation").removeClass("editing_mode");
-    $(".note").draggable("disable");
-    $(".note").resizable("disable");    
-    $(".note").removeClass("editable");
-    $(".slide_inner").removeClass("creation_enabled");
 }
 function editingMode() {
     $(".presentation").addClass("editing_mode");
     $("#cue_box").show();
-    $(".note").draggable("enable");
-    $(".note").resizable("enable");    
-    $(".note").addClass("editable");
-    $(".slide_inner").addClass("creation_enabled");
 }
 function prev() {
   var current = $(".current")
@@ -263,81 +89,28 @@ function next() {
     current.prev().removeClass("past").addClass("far-past")
     current.next().next().addClass("future reduced").removeClass("far-future")
     current.addClass("reduced past").removeClass("current") 
+    //make_raphael_canvas($(".current"));
   } else if ( $(".presentation").hasClass("editing_mode")) {
     // Create Slide and give it two notes
     current.prev().removeClass("past").addClass("far-past")
     current.addClass("reduced past").removeClass("current") 
-    db.transaction( function(t) {
-      t.executeSql('INSERT INTO slides (classes) VALUES ("slide")', [], function(tx, result) {
-        var new_slide_id = result.valueOf().insertId;
-        $(".slides").append(
-        '<div id="slide_'+new_slide_id+'" class="slide zoomed_in_slide current">'+
-          '<div class="slide_inner creation_enabled"> </div>'+
+    var next = $(".slide").size();
+    $(".slides").append(
+        '<div id="slide_'+next+'" class="slide zoomed_in_slide current">'+
+          '<div id="raphael_'+next+'" class="raphael"> </div>'+
+          '<textarea id="code_for_raphael_'+next+'" class="code">Text for the textarea - why do you go away?</textarea>'+
+          '<div id="run_container"> <button class="run" type="button">Run</button> </div>'+
         '</div>');
-        t.executeSql('INSERT INTO notes (content, classes, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
-          , ["h1. Header here", "'header note editable'", 0, 0, slideWidth, 100, new_slide_id], function(t, result) {
-          var n_id= result.insertId;
-          t.executeSql('SELECT * FROM notes WHERE id=?', [n_id], function(t, results) {
-            create_note(results.rows.item(0));    
-          });
-        });
-        t.executeSql('INSERT INTO notes (content, classes, top, left, width, height, slide_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
-          ,  ["Content here", "'note editable'", 200, 0, slideWidth, slideHeight - 200, new_slide_id], function(t, result) {
-          var n_id= result.insertId;
-          t.executeSql('SELECT * FROM notes WHERE id=?', [n_id], function(t, results) {
-            create_note(results.rows.item(0));    
-          });
-        });
-      cylonOffset = $("#progressContainer").width() / ($(".slide").length - 1);
-      });
-    });
-  }
+    };
+}
 
-}
-function create_note(item) {
-  $("#slide_"+item.slide_id).find(".slide_inner").append(
-          '<div id=note_'+item.id+' class='+get_classes(item)+' style='+style_string(item)+'>'+
-            '<div  class="preview">'+linen(item.content)+'</div>'+
-            '<textarea id="edit_'+item.id+'"class="edit_area">'+item.content+'</textarea>'+ 
-            '<a id="info_'+item.id+'" class="info" href="#" style="display: none; "><img alt="Info" src="public/images/info.png"></a>'+
-          '</div>');
-  $('#note_'+item.id).find(".edit_area").css("width", item.width);
-  $('#note_'+item.id).find(".edit_area").css("height", item.height);
-  $(".edit_area").css("display", "none");
-  prettify();
-}
-// note is not here explicitly because it is a default value.
-// It might be better to remove the default and place it explicity.
-// or find a way to always have that column contain at least the 
-// word note.
-function get_classes(item) {
-  return item.classes;
-}
-function style_string(item) {
-  return '"width:'+item.width+'px;height:'+item.height+'px;top:'+item.top+'px;left:'+item.left+'px;"'
-}
-function prettify() {
-  $("pre").addClass("prettyprint");
-  prettyPrint();
-}
-function show_borders_this_red(note) {
-  $(".note").css("border-color", "rgba(25, 25, 25, 0.5)");
-  $(note).css("border-color", "rgba(255, 25, 25, 0.8)");
-}
-function clear_borders() {
-  $(".note").css("border-color", "rgba(25, 25, 25, 0.0)");
-  $(".info").hide();
-}
-function grey_border(note) {
-  $(note).css("border-color", "rgba(55, 25, 25, 0.8)");
-}
 function setCurrent() {
   $($(".slide")[0]).addClass("current")
   $($(".slide")[1]).addClass("reduced future")
   for( i = 2; i < $(".slide").length; i++) {
     $($(".slide")[i]).addClass("reduced far-future")
   }
-  make_raphael_canvas($(".current"));
+  //make_raphael_canvas($(".current"));
 }
 
 function get_order_array() {
@@ -356,33 +129,24 @@ function get_order_array() {
 
 function make_raphael_canvas(slide) {
     var id = slide.find(".raphael").attr("id");
-    paper = Raphael(id, 900, 500);
+    var paper = Raphael(id, 900, 500);
     get_code(id);
     set_canvas(paper, id);
 }
 
-function set_canvas(paper, id) {
-  paper.clear();
-  try {
-    (new Function("paper", "window", "document", $("#code_for_"+id).val() ) ).call(paper, paper);
-  } catch (e) {
-    alert(e.message || e);
-  }
-}
-
 function get_code(id) {
   if( localStorage.getItem('code_for_'+id)) {
-    $("#code_for_"+id).val(localStorage.getItem("code_for_"+id));
+    return localStorage.getItem("code_for_"+id);
   } else {
-    $("#code_for_"+id).val( 'demo1 = paper.circle(320, 240, 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);\n'+
+    return ('demo1 = I.paper.circle(320, 240, 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);\n'+
                     'demo1.node.onclick = function () {\n'+
                     '    demo1.attr("fill", "red");\n'+
                     '};\n\n'+
-                    'var st = paper.set(); \n'+
-                    'var st = paper.set(); \n'+
+                    'var st = I.paper.set(); \n'+
+                    'var st = I.paper.set(); \n'+
                     'st.push( \n'+
-                    '  paper.rect(800, 300, 50, 50, 10), \n'+
-                    '  paper.circle(670, 100, 60) \n'+
+                    '  I.paper.rect(800, 300, 50, 50, 10), \n'+
+                    '  I.paper.circle(670, 100, 60) \n'+
                     ');\n\n'+
                     'st.animate({fill: "red", stroke: "#000", "stroke-width": 30, "stroke-opacity": 0.5}, 1000);');
   }
@@ -410,3 +174,37 @@ function basic_move() {
     this.attr({x: this.ox + dx, y: this.oy + dy, opacity: .5});
   }
 }
+
+function Slide(I) {
+    I = I || {}
+
+    I.id = slide_array.length;
+    I.raphael_id = "raphael_"+I.id;
+    I.html_ = '<div id="slide_'+i+'" class="slide zoomed_in_slide">'+
+                     '<div id="raphael_'+i+'" class="raphael"> </div>'+
+                     '<textarea id="code_for_raphael_'+i+'" class="code">Text for the textarea - why do you go away?</textarea>'+
+                     '<div id="run_container"> <button class="run" type="button">Run</button> </div>'+
+                 '</div>';
+    I.code = get_code(I.raphael_id);
+    I.paper = Raphael(I.raphael_id, 900, 500);
+    I.paper.circle(820*Math.random(), 500*Math.random(), 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);
+
+    I.set_code = function() {
+      $("code_for"+I.raphael_id).val(I.code);
+    }
+    
+    I.set_canvas = function() {
+      I.paper.clear();
+      try {
+        (new Function("paper", "window", "document", $("#code_for_"+I.raphael_id).val() ) ).call(I.paper, I.paper);
+      } catch (e) {
+        alert(e.message || e);
+      }
+    }
+    I.create = function() {
+      I.set_code();
+      I.set_canvas();
+    }
+    return I;
+}
+
