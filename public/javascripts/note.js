@@ -3,7 +3,6 @@ var res;
 var i, j;
 var slideWidth, slideHeight, cylonOffset;
 var slide_array = [];
-var paper;
 $(function() {
   for(i = 0; i < 4; i++) {
     $(".slides").append('<div id="slide_'+i+'" class="slide zoomed_in_slide">'+
@@ -14,7 +13,6 @@ $(function() {
     var n = Slide()
     slide_array.push(n);
     n.create();
-    console.log(n);
   }
   setCurrent();
 
@@ -23,12 +21,9 @@ $(function() {
 
   $(".run").live("click", function() {
     var id = ($($(this).parentsUntil(".slides")[1]).find(".raphael").attr("id"));
-    set_canvas(paper, id);
+    var n = slide_array[parseInt(id.split("_")[1])]
+    n.set_canvas();
     localStorage.setItem('code_for_'+id, $("#code_for_"+id).val());
-    //$("#code_for_"+id).val(localStorage.getItem("code_for_"+id));
-  });
-  $("textarea").live("keyup", function(event) {
-    event.stopPropagation();
   });
 
   $(document).keydown( function(e) {
@@ -69,8 +64,6 @@ function editingMode() {
 function prev() {
   var current = $(".current")
   if (current.prev().attr("id")!= "progressContainer") {
-      var str = "-="+cylonOffset
-    $("#progressEye").animate({left: str}, 600, "easeOutCubic");//, function() {moveFake("neg")});
     current.prev().removeClass("reduced past").addClass("current")
     current.next().removeClass("future").addClass("far-future")
     current.addClass("reduced future").removeClass("current")
@@ -82,15 +75,13 @@ function prev() {
 
 function next() {
   var current = $(".current")
-  if( current.next().length != 0)  {
-      var str = "+="+cylonOffset
-    $("#progressEye").animate({left: str}, 600, "easeOutCubic");//, function() {moveFake("pos")});
+  if( current.next().size() == 1)  {
     current.next().removeClass("future reduced").addClass("current")
     current.prev().removeClass("past").addClass("far-past")
     current.next().next().addClass("future reduced").removeClass("far-future")
     current.addClass("reduced past").removeClass("current") 
     //make_raphael_canvas($(".current"));
-  } else if ( $(".presentation").hasClass("editing_mode")) {
+  } else if ( $(".presentation").hasClass("editing_mode") ) {
     // Create Slide and give it two notes
     current.prev().removeClass("past").addClass("far-past")
     current.addClass("reduced past").removeClass("current") 
@@ -101,7 +92,10 @@ function next() {
           '<textarea id="code_for_raphael_'+next+'" class="code">Text for the textarea - why do you go away?</textarea>'+
           '<div id="run_container"> <button class="run" type="button">Run</button> </div>'+
         '</div>');
-    };
+    var n = Slide();
+    slide_array.push(n);
+    n.create();
+  };
 }
 
 function setCurrent() {
@@ -110,43 +104,20 @@ function setCurrent() {
   for( i = 2; i < $(".slide").length; i++) {
     $($(".slide")[i]).addClass("reduced far-future")
   }
-  //make_raphael_canvas($(".current"));
-}
-
-function get_order_array() {
-  var id_array = [];
-  for(i = 0; i < $(".slide").length; i++) {
-    id_array.push(parseInt($($(".slide")[i]).attr("id").split("_")[1]));
-  }
-  localStorage.setItem('slide_order', JSON.stringify({order: id_array}));
-}
-
-/*function canvas_generator() {
-  for(i = 0; i < $(".slide").size(); i++) {
-    make_raphael_canvas($( $(".slide")[i]) );
-  }
-}*/
-
-function make_raphael_canvas(slide) {
-    var id = slide.find(".raphael").attr("id");
-    var paper = Raphael(id, 900, 500);
-    get_code(id);
-    set_canvas(paper, id);
 }
 
 function get_code(id) {
   if( localStorage.getItem('code_for_'+id)) {
     return localStorage.getItem("code_for_"+id);
   } else {
-    return ('demo1 = I.paper.circle(320, 240, 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);\n'+
+    return ('demo1 = paper.circle(320, 240, 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);\n'+
                     'demo1.node.onclick = function () {\n'+
                     '    demo1.attr("fill", "red");\n'+
                     '};\n\n'+
-                    'var st = I.paper.set(); \n'+
-                    'var st = I.paper.set(); \n'+
+                    'var st = paper.set(); \n'+
                     'st.push( \n'+
-                    '  I.paper.rect(800, 300, 50, 50, 10), \n'+
-                    '  I.paper.circle(670, 100, 60) \n'+
+                    '  paper.rect(800, 300, 50, 50, 10), \n'+
+                    '  paper.circle(670, 100, 60) \n'+
                     ');\n\n'+
                     'st.animate({fill: "red", stroke: "#000", "stroke-width": 30, "stroke-opacity": 0.5}, 1000);');
   }
@@ -185,18 +156,18 @@ function Slide(I) {
                      '<textarea id="code_for_raphael_'+i+'" class="code">Text for the textarea - why do you go away?</textarea>'+
                      '<div id="run_container"> <button class="run" type="button">Run</button> </div>'+
                  '</div>';
-    I.code = get_code(I.raphael_id);
     I.paper = Raphael(I.raphael_id, 900, 500);
-    I.paper.circle(820*Math.random(), 500*Math.random(), 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);
+    var paper = I.paper;
 
     I.set_code = function() {
-      $("code_for"+I.raphael_id).val(I.code);
+      I.code = get_code(I.raphael_id);
+      $("#code_for_"+I.raphael_id).val(I.code);
     }
     
     I.set_canvas = function() {
-      I.paper.clear();
+      paper.clear();
       try {
-        (new Function("paper", "window", "document", $("#code_for_"+I.raphael_id).val() ) ).call(I.paper, I.paper);
+        (new Function("paper", "window", "document", $("#code_for_"+I.raphael_id).val() ) ).call(paper, paper);
       } catch (e) {
         alert(e.message || e);
       }
