@@ -45,9 +45,6 @@ a.info {
   top: -16px;
   right: -4px;
 }
-textarea {
-    resize: none;
-}
 a.info img { width: 25px; }
 .slides {
   width: 100%;
@@ -59,9 +56,14 @@ a.info img { width: 25px; }
   -webkit-transition: -webkit-transform 1s ease-out;
   -webkit-transform: scale(1);
 }
+.code {
+  width: 900px;
+  height: 200px;
+  margin-top: 0px;
+}
 .slide {
   width: 900px;
-  height: 700px;
+  height: 500px;
   -webkit-box-shadow: 0px 0px 9px black;
   -webkit-transition: all 0.35s ease-in-out;
   background: -webkit-gradient(linear, left bottom, left top, from(#BBD), to(white));
@@ -77,8 +79,7 @@ a.info img { width: 25px; }
   display: none;
   position: absolute;
   left: 50%;
-  top: 50%;
-  margin-top: -370px;
+  top: 10px;
   -moz-transform: scale(0.8);
 }
 .slide:nth-child(even) {
@@ -170,7 +171,7 @@ a.delete {
   top: 30px;
   left: 30px;
   width: 840px;
-  height: 640px;
+  height: 440px;
 }
 .edit_area::-webkit-scrollbar {
   width: 6px;
@@ -209,10 +210,4 @@ a.delete {
   border-top-right-radius: 3px 3px;
   border-bottom-right-radius: 3px 3px;
   border-bottom-left-radius: 3px 3px;
-}
-.spaces { list-style-type: none; margin: 0; padding: 0; }
-.spaces.slide li { 
-  float: left; 
-  width: 100px;
-  -webkit-transform: scale(.5);
 }
