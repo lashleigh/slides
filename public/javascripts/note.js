@@ -147,6 +147,7 @@ $(function() {
 
   $(".creation_enabled").live("dblclick", function newNote(event) {
     var id = parseInt($(this).parent().attr("id").split("_")[1]);
+    console.log(event);
     db.transaction( function(t) {
       t.executeSql('INSERT INTO notes (content, classes, top, left, slide_id) VALUES (?, ?, ?, ?, ?)', ["New box", "'note editable'", event.layerY, event.layerX, id], function(t, result) {
         t.executeSql('SELECT * FROM notes WHERE id=?', [result.insertId], function(t, results) {
