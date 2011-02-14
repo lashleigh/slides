@@ -7,7 +7,7 @@ $(function() {
   for(i = 0; i < 4; i++) {
     $(".slides").append('<div id="slide_'+i+'" class="slide zoomed_in_slide">'+
                      '<div id="raphael_'+i+'" class="raphael"> </div>'+
-                     '<textarea id="code_for_raphael_'+i+'" class="code">Text for the textarea - why do you go away?</textarea>'+
+                     '<textarea id="code_for_raphael_'+i+'" class="code"></textarea>'+
                      '<div id="run_container"> <button class="run" type="button">Run</button> </div>'+
                  '</div>');
     var n = Slide()
@@ -158,6 +158,14 @@ function Slide(I) {
                  '</div>';
     I.paper = Raphael(I.raphael_id, 900, 500);
     var paper = I.paper;
+    
+    $("#"+I.raphael_id).dblclick( function(event) {
+      if( $(event.target).parent().attr("id") == I.raphael_id) {
+        n = Note();
+        n.create(event, I.raphael_id);
+        I.notes.push(n);
+      }
+    });
 
     I.set_code = function() {
       I.code = get_code(I.raphael_id);
@@ -176,6 +184,34 @@ function Slide(I) {
       I.set_code();
       I.set_canvas();
     }
+    I.notes = [];
     return I;
 }
 
+function Note(I) {
+  I = I || {}
+
+  I.active = true;
+  I.top;// = 0; //event.offsetX;
+  I.left;// = 0; //event.offsetY;
+  I.width = 200;
+  I.height = 100;
+
+  I.content;// = "h1. Example content";
+  I.create = function(event, raphael_id) {
+     n.top = event.offsetY;
+     n.left = event.offsetX;
+     n.content = "h1. Placeholder";
+     console.log(n);
+     $("#"+raphael_id).append('<div class="note" style="'+I.get_style()+'">'+I.content+'</div>');
+  }
+  I.construct = function() {
+  }
+  I.get_style = function() {
+    var style = "position:absolute;width:"+I.width+"px;height:"+I.height+'px;top:'+I.top+'px;left:'+I.left+'px;';
+    return style;
+
+  }
+
+  return I;
+}
