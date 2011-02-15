@@ -10,7 +10,7 @@ $(function() {
   read_slides();
   read_notes();
   make_slides();
-  //make_notes();
+  make_notes();
   setCurrent();
 
   $(".code").live("blur", function(event) {
@@ -81,6 +81,7 @@ $(function() {
         clear_borders();
         grey_border(this);
         var id = $(this).attr("id").split("_")[1];
+        console.log(this);
         notes_hash[id].top = uiTop;
         notes_hash[id].left = uiLeft;
         save_notes();
@@ -306,8 +307,12 @@ function prettify() {
 
 function make_notes() {
   if( notes_hash != null) {
-    for( note in notes_hash) {
-      $("#"+note.slide_id).append('<div class="note editable" style="'+get_style(note)+'"><div class="preview">'+linen(note.content)+'</div><textarea class="edit_area">'+note.content+'</textarea></div>');
+    for( n in notes_hash) {
+        var note = notes_hash[n];
+      $("#"+note.slide_id).append('<div id="note_'+note.id+'" class="note editable" style="'+get_style(note)+'">'+
+                                  '<div class="preview">'+linen(note.content)+'</div>'+
+                                  '<textarea class="edit_area">'+note.content+'</textarea>'+
+                                  '</div>');
     }
   }
   else { notes_hash = {}; }
