@@ -2,9 +2,7 @@ var db;
 var res;
 var uiLeft, uiTop, uiWidth, uiHeight;
 var slideWidth, slideHeight, cylonOffset;
-var slides_hash = {};
-var notes_hash = {};
-var papers = {};
+var slides_hash = {}, notes_hash = {}, papers = {};
 $(function() {
 
   read_slides();
@@ -12,6 +10,8 @@ $(function() {
   make_slides();
   make_notes();
   setCurrent();
+  slideWidth = $(".slide").width();
+  slideHeight = $(".slide").height();
 
   $(".code").live("blur", function(event) {
       var id = $(event.target).attr("id").split("_")[3];
@@ -21,8 +21,7 @@ $(function() {
   $(".raphael").dblclick( function(event) {
     if( $($(event.target).parent()).hasClass("raphael") ){
       var raphael_id = $(event.target).parent().attr("id");
-      console.log(raphael_id);
-      create_new_note(event, raphael_id);
+      new_note_from_click(event, raphael_id);
     }
   });
 
@@ -33,11 +32,10 @@ $(function() {
   });
 
   $(".editable").live("focusout", function(event) {
-    var some_note = this;
-    var edit_area_content = $(some_note).find(".edit_area").val();
-    $(some_note).find(".preview").html(linen($(some_note).find(".edit_area").val()));
-    $(some_note).find(".preview").show();
-    $(some_note).find(".edit_area").hide();
+    var edit_area_content = $(this).find(".edit_area").val();
+    $(this).find(".preview").html(linen($(this).find(".edit_area").val()));
+    $(this).find(".preview").show();
+    $(this).find(".edit_area").hide();
     prettify();
   });
   $(".editable").live("mouseenter", function() {
@@ -81,7 +79,6 @@ $(function() {
         clear_borders();
         grey_border(this);
         var id = $(this).attr("id").split("_")[1];
-        console.log(this);
         notes_hash[id].top = uiTop;
         notes_hash[id].left = uiLeft;
         save_notes();
@@ -200,17 +197,43 @@ function next() {
     current.prev().removeClass("past").addClass("far-past")
     current.next().next().addClass("future reduced").removeClass("far-future")
     current.addClass("reduced past").removeClass("current") 
-    //make_raphael_canvas($(".current"));
+    var id = $(".current").attr("id").split("_")[1]
+    set_canvas(slides_hash[id])
   } else if ( $(".presentation").hasClass("editing_mode") ) {
     // Create Slide and give it two notes
-    /*current.prev().removeClass("past").addClass("far-past")
+    current.prev().removeClass("past").addClass("far-past")
     current.addClass("reduced past").removeClass("current") 
+
     var slide = Slide();
     $(".slides").append(slide.html_);
-    slides_hash[slide.id] = slide;
+    $("#code_for_"+slide.raphael_id).val(slide.code);
     create_canvas(slide);
+    slides_hash[slide.id] = slide;
     $("#slide_"+slide.id).addClass("current")
-    */
+    save_slides();
+
+    // Autopopulate with two placeholder notes.    
+    var header_note = Note();
+    header_note.top = 0;
+    header_note.left = 0;
+    header_note.width = 900;
+    header_note.height = 110;
+    header_note.content = "h1. Header holder";
+    header_note.slide_id = slide.raphael_id;
+    notes_hash[header_note.id] = header_note;
+    make_a_note(header_note);
+
+    var body_note = Note();
+    body_note.top = 120;
+    body_note.left = 0;
+    body_note.width = 900;
+    body_note.height = 380;
+    body_note.content = "p(pink). paragraphs here";
+    body_note.slide_id = slide.raphael_id;
+    notes_hash[body_note.id] = body_note;
+    make_a_note(body_note);
+
+    save_notes();
   };
 }
 
@@ -275,13 +298,13 @@ function Note(I) {
   I.content;
   return I;
 }
-function create_new_note(event, raphael_id) {
+function new_note_from_click(event, raphael_id) {
   var n = Note();
   n.slide_id = raphael_id;
   n.top = event.offsetY;
   n.left = event.offsetX;
   n.content = "p{color:red;}. Placeholder";
-  $("#"+n.slide_id).append('<div id="note_'+n.id+'" class="note editable" style="'+get_style(n)+'"><div class="preview">'+linen(n.content)+'</div><textarea class="edit_area">'+n.content+'</textarea></div>');
+  $("#"+n.slide_id).append(note_html(n));
   notes_hash[n.id] = n;
 }
 function get_style(note) {
@@ -301,21 +324,29 @@ function grey_border(note) {
   $(note).css("border-color", "rgba(55, 25, 25, 0.8)");
 }
 function prettify() {
-  $("pre").addClass("prettyprint");
+  //$("pre").addClass("prettyprint");
+  $("code").addClass("prettyprint");
   prettyPrint();
+}
+
+function make_a_note(note) {
+  $("#"+note.slide_id).append(note_html(note));
+}
+function note_html(note) {
+    return '<div id="note_'+note.id+'" class="note editable" style="'+get_style(note)+'">'+
+                              '<div class="preview">'+linen(note.content)+'</div>'+
+                              '<textarea class="edit_area" style="width:'+note.width+'px;height:'+note.height+'px;"  >'+note.content+'</textarea>'+
+                              '</div>'
 }
 
 function make_notes() {
   if( notes_hash != null) {
     for( n in notes_hash) {
-        var note = notes_hash[n];
-      $("#"+note.slide_id).append('<div id="note_'+note.id+'" class="note editable" style="'+get_style(note)+'">'+
-                                  '<div class="preview">'+linen(note.content)+'</div>'+
-                                  '<textarea class="edit_area">'+note.content+'</textarea>'+
-                                  '</div>');
+        make_a_note(notes_hash[n]);
     }
   }
   else { notes_hash = {}; }
+  clear_borders();
 }
 
 function make_slides() {
@@ -324,7 +355,6 @@ function make_slides() {
       $(".slides").append(slides_hash[slide].html_);
       $("#code_for_"+slide.raphael_id).val(slide.code);
       create_canvas(slides_hash[slide]);
-      slides_hash[slide.id] = slide;
     }
   } 
   else {
