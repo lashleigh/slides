@@ -10,18 +10,18 @@ $(function() {
   read_slides();
   read_notes();
   make_slides();
-  
+  //make_notes();
   setCurrent();
 
   $(".code").live("blur", function(event) {
       var id = $(event.target).attr("id").split("_")[3];
       slides_hash[id].code = $(event.target).val();
       save_slides();
-      console.log(JSON.parse(localStorage.getItem("slides")));
   });
   $(".raphael").dblclick( function(event) {
     if( $($(event.target).parent()).hasClass("raphael") ){
       var raphael_id = $(event.target).parent().attr("id");
+      console.log(raphael_id);
       create_new_note(event, raphael_id);
     }
   });
@@ -46,6 +46,11 @@ $(function() {
   });
   $(".editable").live("mouseleave", function() {
     clear_borders()
+  });
+  $(".edit_area").live("blur", function(event) {
+    var id = $($(event.target).parent()).attr("id").split("_")[1];
+    notes_hash[id].content = $(event.target).val();
+    save_notes();
   });
 
   $(".editable").livequery( function() {
@@ -75,6 +80,9 @@ $(function() {
         $(this).css("top", uiTop+"px");
         clear_borders();
         grey_border(this);
+        var id = $(this).attr("id").split("_")[1];
+        notes_hash[id].top = uiTop;
+        notes_hash[id].left = uiLeft;
         save_notes();
       }
     });
@@ -106,7 +114,6 @@ $(function() {
         if( ui.position.top + ui.size.height > slideHeight ) {
           uiHeight = slideHeight - ui.position.top;
         }
-
         $(this).find('.preview').css("width",(uiWidth)+"px");
         $(this).find('.edit_area').css("width",(uiWidth)+"px");
         $(this).find('.preview').css("height",(uiHeight)+"px");
@@ -115,6 +122,11 @@ $(function() {
       stop: function(event, ui) {
         clear_borders();
         grey_border(this);
+        var id = $(this).attr("id").split("_")[1];
+        notes_hash[id].top = uiTop;
+        notes_hash[id].left = uiLeft;
+        notes_hash[id].width = uiWidth;
+        notes_hash[id].height = uiHeight;
         save_notes();
       }
     });
@@ -128,12 +140,9 @@ $(function() {
     save_slides();
   });
   $(".run").live("click", function() {
-    var id = ($($(this).parentsUntil(".slides")[1]).find(".raphael").attr("id"));
-    var n = slides_hash[parseInt(id.split("_")[1])]
+    var id = $(this).attr("id").split("_")[1]
+    var n = slides_hash[id]
     set_canvas(n);
-    slides_hash[n.id].code = $("#code_for_"+id).val();
-    console.log(slides_hash[n.id].code);
-    //localStorage.setItem('code_for_'+id, $("#code_for_"+id).val());
   });
 
   $(document).keydown( function(e) {
@@ -229,7 +238,7 @@ function Slide(I) {
     I.html_ = '<div id="slide_'+I.id+'" class="slide zoomed_in_slide">'+
                      '<div id="'+I.raphael_id+'" class="raphael"> </div>'+
                      '<textarea id="code_for_'+I.raphael_id+'" class="code"></textarea>'+
-                     '<div id="run_container"> <button class="run" type="button">Run</button><button class="save" type="button">Save</button></div>'+
+                     '<div id="run_container"> <button id="run_'+I.id+'" class="run" type="button">Run</button><button class="save" type="button">Save</button></div>'+
                  '</div>';
     
     return I;
@@ -271,7 +280,7 @@ function create_new_note(event, raphael_id) {
   n.top = event.offsetY;
   n.left = event.offsetX;
   n.content = "p{color:red;}. Placeholder";
-  $("#"+n.slide_id).append('<div class="note editable" style="'+get_style(n)+'"><div class="preview">'+linen(n.content)+'</div><textarea class="edit_area">'+n.content+'</textarea></div>');
+  $("#"+n.slide_id).append('<div id="note_'+n.id+'" class="note editable" style="'+get_style(n)+'"><div class="preview">'+linen(n.content)+'</div><textarea class="edit_area">'+n.content+'</textarea></div>');
   notes_hash[n.id] = n;
 }
 function get_style(note) {
