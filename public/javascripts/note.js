@@ -11,12 +11,21 @@ $(function() {
     slide.create();
   }
   setCurrent();
+  read_and_assign_notes();
+  
+  $(".raphael").dblclick( function(event) {
+    if( $($(event.target).parent()).hasClass("raphael") ){
+      var raphael_id = $(event.target).parent().attr("id");
+      create_new_note(event, raphael_id);
+    }
+  });
 
   $(".editable").live("dblclick", function(event) {
     $(this).find(".preview").hide();
     $(this).find(".edit_area").show().focus();
     event.stopPropagation();
   });
+
   $(".editable").live("focusout", function(event) {
     var some_note = this;
     var edit_area_content = $(some_note).find(".edit_area").val();
@@ -107,6 +116,7 @@ $(function() {
   $(".past").live("click", function() { prev(); });
 
   $(".save").live("click", function() {
+    set_notes();
   });
   $(".run").live("click", function() {
     var id = ($($(this).parentsUntil(".slides")[1]).find(".raphael").attr("id"));
@@ -175,7 +185,6 @@ function next() {
     current.prev().removeClass("past").addClass("far-past")
     current.addClass("reduced past").removeClass("current") 
     var slide = Slide();
-    console.log(slide);
     $(".slides").append(slide.html_);
     slide_array.push(slide);
     slide.create();
@@ -257,18 +266,7 @@ function Slide(I) {
       }
     }
     I.create = function() {
-      I.paper = Raphael(I.raphael_id, 900, 500);
-      paper = I.paper;
-    
-      $("#"+I.raphael_id).dblclick( function(event) {
-        if( $(event.target).hasClass("note") ){
-        } else if( $(event.target).parent().attr("id") == I.raphael_id) {
-          n = Note();
-          n.create(event, I.raphael_id);
-          I.notes.push(n);
-        }
-      });
-
+      paper = Raphael(I.raphael_id, 900, 500);
       I.set_code();
       I.set_canvas();
     }
@@ -280,23 +278,30 @@ function Note(I) {
   I = I || {}
 
   I.active = true;
+  I.id;
+  I.slide;
   I.top;
   I.left;
   I.width = 200;
   I.height = 100;
 
   I.content;
-  I.create = function(event, raphael_id) {
-     n.top = event.offsetY;
-     n.left = event.offsetX;
-     n.content = "h1. Placeholder";
-     $("#"+raphael_id).append('<div class="note editable" style="'+I.get_style()+'"><div class="preview">'+linen(I.content)+'</div><textarea class="edit_area">'+I.content+'</textarea></div>');
-  }
-  I.get_style = function() {
-    var style = "position:absolute;width:"+I.width+"px;height:"+I.height+'px;top:'+I.top+'px;left:'+I.left+'px;';
-    return style;
-  }
   return I;
+}
+function create_new_note(event, raphael_id) {
+  var n = Note();
+  n.slide = raphael_id;
+  n.top = event.offsetY;
+  n.left = event.offsetX;
+  n.content = "p{color:red;}. Placeholder";
+  $("#"+n.slide).append('<div class="note editable" style="'+get_style(n)+'"><div class="preview">'+linen(n.content)+'</div><textarea class="edit_area">'+n.content+'</textarea></div>');
+  var index = raphael_id.split("_")[1];
+  slide_array[index].notes.push(n);
+  n.id = slide_array[index].notes.length;
+}
+function get_style(note) {
+  var style = "position:absolute;width:"+note.width+"px;height:"+note.height+'px;top:'+note.top+'px;left:'+note.left+'px;';
+  return style;
 }
 
 function show_borders_this_red(note) {
@@ -313,4 +318,27 @@ function grey_border(note) {
 function prettify() {
   $("pre").addClass("prettyprint");
   prettyPrint();
+}
+
+function read_and_assign_notes() {
+    var notes = JSON.parse(localStorage.getItem("notes"));
+    if( notes != null) {
+    for(var i=0; i < slide_array.length; i++) {
+        for(var j = 0; j < notes[i].length; j++) {
+            var note = notes[i][j];
+          slide_array[i].notes.push(note);
+          $("#"+note.slide).append('<div class="note editable" style="'+get_style(note)+'"><div class="preview">'+linen(note.content)+'</div><textarea class="edit_area">'+note.content+'</textarea></div>');
+        }
+    }
+    }
+}
+function set_notes() {
+    var notes = [];
+    for(var i = 0; i < slide_array.length; i++) {
+        notes.push(slide_array[i].notes);
+    }
+    localStorage.setItem("notes", JSON.stringify(notes));
+    console.log(JSON.parse(localStorage.getItem("notes")));
+}
+function clear_notes() {
 }
