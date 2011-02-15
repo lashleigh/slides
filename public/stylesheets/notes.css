@@ -15,7 +15,7 @@
     background-image: -webkit-gradient(radial, center center, 0, center center, 16, from(red), to(black));
   -webkit-transition: -webkit-transition-left 3s ease-out;
 }
-
+button {float: left;}
 body {
   font: 20px "Lucida Grande", "Trebuchet MS", Verdana, sans-serif;
   background: rgba(25, 25, 25, .9);

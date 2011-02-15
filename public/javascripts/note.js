@@ -1,26 +1,20 @@
 var db;
 var res;
-var i, j;
 var uiLeft, uiTop, uiWidth, uiHeight;
 var slideWidth, slideHeight, cylonOffset;
 var slide_array = [];
 $(function() {
-  for(i = 0; i < 4; i++) {
-    $(".slides").append('<div id="slide_'+i+'" class="slide zoomed_in_slide">'+
-                     '<div id="raphael_'+i+'" class="raphael"> </div>'+
-                     '<textarea id="code_for_raphael_'+i+'" class="code"></textarea>'+
-                     '<div id="run_container"> <button class="run" type="button">Run</button> </div>'+
-                 '</div>');
-    var n = Slide()
-    slide_array.push(n);
-    n.create();
+  for(var i = 0; i < 4; i++) {
+    var slide = Slide()
+    $(".slides").append(slide.html_);
+    slide_array.push(slide);
+    slide.create();
   }
   setCurrent();
 
   $(".editable").live("dblclick", function(event) {
     $(this).find(".preview").hide();
     $(this).find(".edit_area").show().focus();
-    console.log(this);
     event.stopPropagation();
   });
   $(".editable").live("focusout", function(event) {
@@ -112,6 +106,8 @@ $(function() {
   $(".future").live("click", function() { next(); });
   $(".past").live("click", function() { prev(); });
 
+  $(".save").live("click", function() {
+  });
   $(".run").live("click", function() {
     var id = ($($(this).parentsUntil(".slides")[1]).find(".raphael").attr("id"));
     var n = slide_array[parseInt(id.split("_")[1])]
@@ -156,7 +152,7 @@ function editingMode() {
 }
 function prev() {
   var current = $(".current")
-  if (current.prev().attr("id")!= "progressContainer") {
+  if (current.prev().size() != 0) {
     current.prev().removeClass("reduced past").addClass("current")
     current.next().removeClass("future").addClass("far-future")
     current.addClass("reduced future").removeClass("current")
@@ -178,23 +174,19 @@ function next() {
     // Create Slide and give it two notes
     current.prev().removeClass("past").addClass("far-past")
     current.addClass("reduced past").removeClass("current") 
-    var next = $(".slide").size();
-    $(".slides").append(
-        '<div id="slide_'+next+'" class="slide zoomed_in_slide current">'+
-          '<div id="raphael_'+next+'" class="raphael"> </div>'+
-          '<textarea id="code_for_raphael_'+next+'" class="code">Text for the textarea - why do you go away?</textarea>'+
-          '<div id="run_container"> <button class="run" type="button">Run</button> </div>'+
-        '</div>');
-    var n = Slide();
-    slide_array.push(n);
-    n.create();
+    var slide = Slide();
+    console.log(slide);
+    $(".slides").append(slide.html_);
+    slide_array.push(slide);
+    slide.create();
+    $("#slide_"+slide.id).addClass("current")
   };
 }
 
 function setCurrent() {
   $($(".slide")[0]).addClass("current")
   $($(".slide")[1]).addClass("reduced future")
-  for( i = 2; i < $(".slide").length; i++) {
+  for( var i = 2; i < $(".slide").length; i++) {
     $($(".slide")[i]).addClass("reduced far-future")
   }
 }
@@ -243,24 +235,14 @@ function Slide(I) {
     I = I || {}
 
     I.id = slide_array.length;
+    var paper;
     I.raphael_id = "raphael_"+I.id;
-    I.html_ = '<div id="slide_'+i+'" class="slide zoomed_in_slide">'+
-                     '<div id="raphael_'+i+'" class="raphael"> </div>'+
-                     '<textarea id="code_for_raphael_'+i+'" class="code">Text for the textarea - why do you go away?</textarea>'+
-                     '<div id="run_container"> <button class="run" type="button">Run</button> </div>'+
+    I.html_ = '<div id="slide_'+I.id+'" class="slide zoomed_in_slide">'+
+                     '<div id="'+I.raphael_id+'" class="raphael"> </div>'+
+                     '<textarea id="code_for_'+I.raphael_id+'" class="code"></textarea>'+
+                     '<div id="run_container"> <button class="run" type="button">Run</button><button class="save" type="button">Save</button></div>'+
                  '</div>';
-    I.paper = Raphael(I.raphael_id, 900, 500);
-    var paper = I.paper;
     
-    $("#"+I.raphael_id).dblclick( function(event) {
-      if( $(event.target).hasClass("note") ){
-      } else if( $(event.target).parent().attr("id") == I.raphael_id) {
-        n = Note();
-        n.create(event, I.raphael_id);
-        I.notes.push(n);
-      }
-    });
-
     I.set_code = function() {
       I.code = get_code(I.raphael_id);
       $("#code_for_"+I.raphael_id).val(I.code);
@@ -275,6 +257,18 @@ function Slide(I) {
       }
     }
     I.create = function() {
+      I.paper = Raphael(I.raphael_id, 900, 500);
+      paper = I.paper;
+    
+      $("#"+I.raphael_id).dblclick( function(event) {
+        if( $(event.target).hasClass("note") ){
+        } else if( $(event.target).parent().attr("id") == I.raphael_id) {
+          n = Note();
+          n.create(event, I.raphael_id);
+          I.notes.push(n);
+        }
+      });
+
       I.set_code();
       I.set_canvas();
     }
@@ -286,26 +280,22 @@ function Note(I) {
   I = I || {}
 
   I.active = true;
-  I.top;// = 0; //event.offsetX;
-  I.left;// = 0; //event.offsetY;
+  I.top;
+  I.left;
   I.width = 200;
   I.height = 100;
 
-  I.content;// = "h1. Example content";
+  I.content;
   I.create = function(event, raphael_id) {
      n.top = event.offsetY;
      n.left = event.offsetX;
      n.content = "h1. Placeholder";
      $("#"+raphael_id).append('<div class="note editable" style="'+I.get_style()+'"><div class="preview">'+linen(I.content)+'</div><textarea class="edit_area">'+I.content+'</textarea></div>');
   }
-  I.construct = function() {
-  }
   I.get_style = function() {
     var style = "position:absolute;width:"+I.width+"px;height:"+I.height+'px;top:'+I.top+'px;left:'+I.left+'px;';
     return style;
-
   }
-
   return I;
 }
 
