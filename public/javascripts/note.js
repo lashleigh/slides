@@ -12,8 +12,13 @@ $(function() {
   make_slides();
   
   setCurrent();
-  //read_and_assign_notes();
-  
+
+  $(".code").live("blur", function(event) {
+      var id = $(event.target).attr("id").split("_")[3];
+      slides_hash[id].code = $(event.target).val();
+      save_slides();
+      console.log(JSON.parse(localStorage.getItem("slides")));
+  });
   $(".raphael").dblclick( function(event) {
     if( $($(event.target).parent()).hasClass("raphael") ){
       var raphael_id = $(event.target).parent().attr("id");
@@ -70,6 +75,7 @@ $(function() {
         $(this).css("top", uiTop+"px");
         clear_borders();
         grey_border(this);
+        save_notes();
       }
     });
   });
@@ -109,6 +115,7 @@ $(function() {
       stop: function(event, ui) {
         clear_borders();
         grey_border(this);
+        save_notes();
       }
     });
   });
@@ -118,14 +125,15 @@ $(function() {
 
   $(".save").live("click", function() {
     save_notes();
-    console.log(slides_hash);
     save_slides();
   });
   $(".run").live("click", function() {
     var id = ($($(this).parentsUntil(".slides")[1]).find(".raphael").attr("id"));
     var n = slides_hash[parseInt(id.split("_")[1])]
     set_canvas(n);
-    localStorage.setItem('code_for_'+id, $("#code_for_"+id).val());
+    slides_hash[n.id].code = $("#code_for_"+id).val();
+    console.log(slides_hash[n.id].code);
+    //localStorage.setItem('code_for_'+id, $("#code_for_"+id).val());
   });
 
   $(document).keydown( function(e) {
@@ -207,7 +215,7 @@ function Slide(I) {
     I = I || {}
 
     I.id = (new Date()).getTime();
-    I.code ='demo1 = paper.circle(320, 240, 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);\n'+
+    I.code; /*='demo1 = paper.circle(320, 240, 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);\n'+
                     'demo1.node.onclick = function () {\n'+
                     '    demo1.attr("fill", "red");\n'+
                     '};\n\n'+
@@ -216,7 +224,7 @@ function Slide(I) {
                     '  paper.rect(800, 300, 50, 50, 10), \n'+
                     '  paper.circle(670, 100, 60) \n'+
                     ');\n\n'+
-                    'st.animate({fill: "red", stroke: "#000", "stroke-width": 30, "stroke-opacity": 0.5}, 1000);';
+                    'st.animate({fill: "red", stroke: "#000", "stroke-width": 30, "stroke-opacity": 0.5}, 1000);';*/
     I.raphael_id = "raphael_"+I.id;
     I.html_ = '<div id="slide_'+I.id+'" class="slide zoomed_in_slide">'+
                      '<div id="'+I.raphael_id+'" class="raphael"> </div>'+
@@ -229,7 +237,6 @@ function Slide(I) {
 
 function create_canvas(slide) {
   papers[slide.id] = Raphael(slide.raphael_id, 900, 500);
-  console.log(papers[slide.id]);
   $("#code_for_"+slide.raphael_id).val(slide.code);
  
   set_canvas(slide);
@@ -301,6 +308,7 @@ function make_slides() {
   if( slides_hash != null) {
     for( slide in slides_hash) {
       $(".slides").append(slides_hash[slide].html_);
+      $("#code_for_"+slide.raphael_id).val(slide.code);
       create_canvas(slides_hash[slide]);
       slides_hash[slide.id] = slide;
     }
@@ -312,7 +320,6 @@ function make_slides() {
       $(".slides").append(slide.html_);
       $("#code_for_"+slide.raphael_id).val(slide.code);
       create_canvas(slide);
-      //set_canvas(slide);
       slides_hash[slide.id] = slide;
     }
   }
@@ -320,9 +327,7 @@ function make_slides() {
 
 function read_slides() { slides_hash = JSON.parse(localStorage.getItem("slides")); }
 function read_notes()  { notes_hash = JSON.parse(localStorage.getItem("notes")); }
-function save_slides() { 
-    localStorage.setItem("slides", JSON.stringify(slides_hash)); 
-}
+function save_slides() { localStorage.setItem("slides", JSON.stringify(slides_hash)); }
 function save_notes()  { localStorage.setItem("notes", JSON.stringify(notes_hash)); }
 
 function basic_move() {
