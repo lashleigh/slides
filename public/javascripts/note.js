@@ -2,16 +2,17 @@ var db;
 var res;
 var uiLeft, uiTop, uiWidth, uiHeight;
 var slideWidth, slideHeight, cylonOffset;
-var slide_array = [];
+var slides_hash = {};
+var notes_hash = {};
+var papers = {};
 $(function() {
-  for(var i = 0; i < 4; i++) {
-    var slide = Slide()
-    $(".slides").append(slide.html_);
-    slide_array.push(slide);
-    slide.create();
-  }
+
+  read_slides();
+  read_notes();
+  make_slides();
+  
   setCurrent();
-  read_and_assign_notes();
+  //read_and_assign_notes();
   
   $(".raphael").dblclick( function(event) {
     if( $($(event.target).parent()).hasClass("raphael") ){
@@ -116,12 +117,14 @@ $(function() {
   $(".past").live("click", function() { prev(); });
 
   $(".save").live("click", function() {
-    set_notes();
+    save_notes();
+    console.log(slides_hash);
+    save_slides();
   });
   $(".run").live("click", function() {
     var id = ($($(this).parentsUntil(".slides")[1]).find(".raphael").attr("id"));
-    var n = slide_array[parseInt(id.split("_")[1])]
-    n.set_canvas();
+    var n = slides_hash[parseInt(id.split("_")[1])]
+    set_canvas(n);
     localStorage.setItem('code_for_'+id, $("#code_for_"+id).val());
   });
 
@@ -182,13 +185,14 @@ function next() {
     //make_raphael_canvas($(".current"));
   } else if ( $(".presentation").hasClass("editing_mode") ) {
     // Create Slide and give it two notes
-    current.prev().removeClass("past").addClass("far-past")
+    /*current.prev().removeClass("past").addClass("far-past")
     current.addClass("reduced past").removeClass("current") 
     var slide = Slide();
     $(".slides").append(slide.html_);
-    slide_array.push(slide);
-    slide.create();
+    slides_hash[slide.id] = slide;
+    create_canvas(slide);
     $("#slide_"+slide.id).addClass("current")
+    */
   };
 }
 
@@ -199,12 +203,11 @@ function setCurrent() {
     $($(".slide")[i]).addClass("reduced far-future")
   }
 }
+function Slide(I) {
+    I = I || {}
 
-function get_code(id) {
-  if( localStorage.getItem('code_for_'+id)) {
-    return localStorage.getItem("code_for_"+id);
-  } else {
-    return ('demo1 = paper.circle(320, 240, 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);\n'+
+    I.id = (new Date()).getTime();
+    I.code ='demo1 = paper.circle(320, 240, 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);\n'+
                     'demo1.node.onclick = function () {\n'+
                     '    demo1.attr("fill", "red");\n'+
                     '};\n\n'+
@@ -213,9 +216,114 @@ function get_code(id) {
                     '  paper.rect(800, 300, 50, 50, 10), \n'+
                     '  paper.circle(670, 100, 60) \n'+
                     ');\n\n'+
-                    'st.animate({fill: "red", stroke: "#000", "stroke-width": 30, "stroke-opacity": 0.5}, 1000);');
+                    'st.animate({fill: "red", stroke: "#000", "stroke-width": 30, "stroke-opacity": 0.5}, 1000);';
+    I.raphael_id = "raphael_"+I.id;
+    I.html_ = '<div id="slide_'+I.id+'" class="slide zoomed_in_slide">'+
+                     '<div id="'+I.raphael_id+'" class="raphael"> </div>'+
+                     '<textarea id="code_for_'+I.raphael_id+'" class="code"></textarea>'+
+                     '<div id="run_container"> <button class="run" type="button">Run</button><button class="save" type="button">Save</button></div>'+
+                 '</div>';
+    
+    return I;
+}
+
+function create_canvas(slide) {
+  papers[slide.id] = Raphael(slide.raphael_id, 900, 500);
+  console.log(papers[slide.id]);
+  $("#code_for_"+slide.raphael_id).val(slide.code);
+ 
+  set_canvas(slide);
+}
+function set_canvas(slide) {
+  var paper = papers[slide.id]
+      paper.clear();
+  try {
+    (new Function("paper", "window", "document", $("#code_for_"+slide.raphael_id).val() ) ).call(paper, paper);
+  } catch (e) {
+    alert(e.message || e);
   }
 }
+
+function Note(I) {
+  I = I || {}
+
+  I.active = true;
+  I.id = (new Date()).getTime();
+  I.slide_id;
+  I.top;
+  I.left;
+  I.width = 200;
+  I.height = 100;
+
+  I.content;
+  return I;
+}
+function create_new_note(event, raphael_id) {
+  var n = Note();
+  n.slide_id = raphael_id;
+  n.top = event.offsetY;
+  n.left = event.offsetX;
+  n.content = "p{color:red;}. Placeholder";
+  $("#"+n.slide_id).append('<div class="note editable" style="'+get_style(n)+'"><div class="preview">'+linen(n.content)+'</div><textarea class="edit_area">'+n.content+'</textarea></div>');
+  notes_hash[n.id] = n;
+}
+function get_style(note) {
+  var style = "position:absolute;width:"+note.width+"px;height:"+note.height+'px;top:'+note.top+'px;left:'+note.left+'px;';
+  return style;
+}
+
+function show_borders_this_red(note) {
+  $(".note").css("border-color", "rgba(25, 25, 25, 0.5)");
+  $(note).css("border-color", "rgba(255, 25, 25, 0.8)");
+}
+function clear_borders() {
+  $(".note").css("border-color", "rgba(25, 25, 25, 0.0)");
+  $(".info").hide();
+}
+function grey_border(note) {
+  $(note).css("border-color", "rgba(55, 25, 25, 0.8)");
+}
+function prettify() {
+  $("pre").addClass("prettyprint");
+  prettyPrint();
+}
+
+function make_notes() {
+  if( notes_hash != null) {
+    for( note in notes_hash) {
+      $("#"+note.slide_id).append('<div class="note editable" style="'+get_style(note)+'"><div class="preview">'+linen(note.content)+'</div><textarea class="edit_area">'+note.content+'</textarea></div>');
+    }
+  }
+  else { notes_hash = {}; }
+}
+
+function make_slides() {
+  if( slides_hash != null) {
+    for( slide in slides_hash) {
+      $(".slides").append(slides_hash[slide].html_);
+      create_canvas(slides_hash[slide]);
+      slides_hash[slide.id] = slide;
+    }
+  } 
+  else {
+    slides_hash = {};
+    for(var i = 0; i < 4; i++) {
+      var slide = Slide();
+      $(".slides").append(slide.html_);
+      $("#code_for_"+slide.raphael_id).val(slide.code);
+      create_canvas(slide);
+      //set_canvas(slide);
+      slides_hash[slide.id] = slide;
+    }
+  }
+}
+
+function read_slides() { slides_hash = JSON.parse(localStorage.getItem("slides")); }
+function read_notes()  { notes_hash = JSON.parse(localStorage.getItem("notes")); }
+function save_slides() { 
+    localStorage.setItem("slides", JSON.stringify(slides_hash)); 
+}
+function save_notes()  { localStorage.setItem("notes", JSON.stringify(notes_hash)); }
 
 function basic_move() {
   startCircle = function () {
@@ -240,105 +348,4 @@ function basic_move() {
   }
 }
 
-function Slide(I) {
-    I = I || {}
 
-    I.id = slide_array.length;
-    var paper;
-    I.raphael_id = "raphael_"+I.id;
-    I.html_ = '<div id="slide_'+I.id+'" class="slide zoomed_in_slide">'+
-                     '<div id="'+I.raphael_id+'" class="raphael"> </div>'+
-                     '<textarea id="code_for_'+I.raphael_id+'" class="code"></textarea>'+
-                     '<div id="run_container"> <button class="run" type="button">Run</button><button class="save" type="button">Save</button></div>'+
-                 '</div>';
-    
-    I.set_code = function() {
-      I.code = get_code(I.raphael_id);
-      $("#code_for_"+I.raphael_id).val(I.code);
-    }
-    
-    I.set_canvas = function() {
-      paper.clear();
-      try {
-        (new Function("paper", "window", "document", $("#code_for_"+I.raphael_id).val() ) ).call(paper, paper);
-      } catch (e) {
-        alert(e.message || e);
-      }
-    }
-    I.create = function() {
-      paper = Raphael(I.raphael_id, 900, 500);
-      I.set_code();
-      I.set_canvas();
-    }
-    I.notes = [];
-    return I;
-}
-
-function Note(I) {
-  I = I || {}
-
-  I.active = true;
-  I.id;
-  I.slide;
-  I.top;
-  I.left;
-  I.width = 200;
-  I.height = 100;
-
-  I.content;
-  return I;
-}
-function create_new_note(event, raphael_id) {
-  var n = Note();
-  n.slide = raphael_id;
-  n.top = event.offsetY;
-  n.left = event.offsetX;
-  n.content = "p{color:red;}. Placeholder";
-  $("#"+n.slide).append('<div class="note editable" style="'+get_style(n)+'"><div class="preview">'+linen(n.content)+'</div><textarea class="edit_area">'+n.content+'</textarea></div>');
-  var index = raphael_id.split("_")[1];
-  slide_array[index].notes.push(n);
-  n.id = slide_array[index].notes.length;
-}
-function get_style(note) {
-  var style = "position:absolute;width:"+note.width+"px;height:"+note.height+'px;top:'+note.top+'px;left:'+note.left+'px;';
-  return style;
-}
-
-function show_borders_this_red(note) {
-  $(".note").css("border-color", "rgba(25, 25, 25, 0.5)");
-  $(note).css("border-color", "rgba(255, 25, 25, 0.8)");
-}
-function clear_borders() {
-  $(".note").css("border-color", "rgba(25, 25, 25, 0.0)");
-  $(".info").hide();
-}
-function grey_border(note) {
-  $(note).css("border-color", "rgba(55, 25, 25, 0.8)");
-}
-function prettify() {
-  $("pre").addClass("prettyprint");
-  prettyPrint();
-}
-
-function read_and_assign_notes() {
-    var notes = JSON.parse(localStorage.getItem("notes"));
-    if( notes != null) {
-    for(var i=0; i < slide_array.length; i++) {
-        for(var j = 0; j < notes[i].length; j++) {
-            var note = notes[i][j];
-          slide_array[i].notes.push(note);
-          $("#"+note.slide).append('<div class="note editable" style="'+get_style(note)+'"><div class="preview">'+linen(note.content)+'</div><textarea class="edit_area">'+note.content+'</textarea></div>');
-        }
-    }
-    }
-}
-function set_notes() {
-    var notes = [];
-    for(var i = 0; i < slide_array.length; i++) {
-        notes.push(slide_array[i].notes);
-    }
-    localStorage.setItem("notes", JSON.stringify(notes));
-    console.log(JSON.parse(localStorage.getItem("notes")));
-}
-function clear_notes() {
-}
