@@ -12,10 +12,12 @@ $(function() {
   setCurrent();
   slideWidth = $(".slide").width();
   slideHeight = $(".slide").height();
+  //var editor = ace.edit("editor");
+  //editor.setTheme("ace/theme/twilight");
 
   $(".code").live("blur", function(event) {
-      var id = $(event.target).attr("id").split("_")[3];
-      slides_hash[id].code = $(event.target).val();
+      id = $(".current").attr("id").split("_")[1];
+      slides_hash[id].code = $("#editor textarea").val();
       save_slides();
   });
   $(".raphael").dblclick( function(event) {
@@ -133,8 +135,8 @@ $(function() {
     });
   });
 
-  $(".future").live("click", function() { next(); });
-  $(".past").live("click", function() { prev(); });
+  $(".future").live("click", function() { go_to_next(); });
+  $(".past").live("click", function() { go_to_prev(); });
 
   $(".save").live("click", function() {
     save_notes();
@@ -143,6 +145,7 @@ $(function() {
   $(".run").live("click", function() {
     var id = $(this).attr("id").split("_")[1]
     var n = slides_hash[id]
+    save_slides();
     set_canvas(n);
   });
 
@@ -158,25 +161,27 @@ $(function() {
 function handleKeys(e) {
  switch (e.keyCode) {
    case 37: // left arrow
-     prev(); break;
+     go_to_prev(); break;
    case 39: // right arrow
-     next(); break;
+     go_to_next(); break;
    case 80: // P 
      presentationMode(); break;
    case 69: // E
      editingMode(); break;
    case 65: //a
-     toggle_code_box(e); break;
+     codingMode(e); break;
    //case 51: // 3
      //this.switch3D(); break;
    //case 83: //S
      //reorder_slides(); break;
   }
 }
-function toggle_code_box(e) {
-    $($(".current").find(".code")).toggle(e);
+function codingMode(e) {
+    $(".presentation").addClass("coding_mode");
+    $("#editor").toggle(e);
     $($(".current").find(".run_container")).toggle(e);
     $(".current").toggleClass("zoomed_in_slide").toggleClass("zoomed_out_slide");
+    $(".slide").toggleClass("slide_transition");
 }
 function presentationMode() {
     clear_borders();
@@ -193,26 +198,40 @@ function editingMode() {
     $(".note").draggable("enable");
     $(".note").resizable("enable");
 }
-function prev() {
+function go_to_prev() {
   var current = $(".current")
+  if (current.hasClass("zoomed_out_slide") ){
+    current.addClass("zoomed_in_slide").removeClass("zoomed_out_slide");
+    current.prev().addClass("zoomed_out_slide").removeClass("zoomed_in_slide");
+  }
   if (current.prev().size() != 0) {
     current.prev().removeClass("reduced past").addClass("current")
     current.next().removeClass("future").addClass("far-future")
     current.addClass("reduced future").removeClass("current")
     current.prev().prev().addClass("past").removeClass("far-past")
+
+    var id = $(".current").attr("id").split("_")[1];
+    $("#editor textarea").val(slides_hash[id].code);
+    set_canvas(slides_hash[id])
   } else if( $(".presentation").hasClass("editing_mode")) {
     
   }
 }
 
-function next() {
+function go_to_next() {
   var current = $(".current")
+  if (current.hasClass("zoomed_out_slide") ){
+    current.addClass("zoomed_in_slide").removeClass("zoomed_out_slide");
+    current.next().addClass("zoomed_out_slide").removeClass("zoomed_in_slide");
+  }
   if( current.next().size() == 1)  {
     current.next().removeClass("future reduced").addClass("current")
     current.prev().removeClass("past").addClass("far-past")
     current.next().next().addClass("future reduced").removeClass("far-future")
     current.addClass("reduced past").removeClass("current") 
+
     var id = $(".current").attr("id").split("_")[1]
+    $("#editor textarea").val(slides_hash[id].code);
     set_canvas(slides_hash[id])
   } else if ( $(".presentation").hasClass("editing_mode") ) {
     // Create Slide and give it two notes
@@ -221,11 +240,11 @@ function next() {
 
     var slide = Slide();
     $(".slides").append( slide_html(slide) );
-    $("#code_for_"+slide.raphael_id).val(slide.code);
-    create_canvas(slide);
     slides_hash[slide.id] = slide;
     $("#slide_"+slide.id).addClass("current")
     save_slides();
+    $("#editor textarea").val(slides_hash[slide.id].code);
+    create_canvas(slide);
 
     // Autopopulate with two placeholder notes.    
     var header_note = Note();
@@ -258,6 +277,9 @@ function setCurrent() {
   for( var i = 2; i < $(".slide").length; i++) {
     $($(".slide")[i]).addClass("reduced far-future")
   }
+  var id = $(".current").attr("id").split("_")[1];
+  $("#editor textarea").val(slides_hash[id].code);
+  set_canvas(slides_hash[id])
 }
 function Slide(I) {
     I = I || {}
@@ -280,7 +302,6 @@ function Slide(I) {
 
 function create_canvas(slide) {
   papers[slide.id] = Raphael(slide.raphael_id, 900, 700);
-  $("#code_for_"+slide.raphael_id).val(slide.code);
  
   set_canvas(slide);
 }
@@ -288,7 +309,7 @@ function set_canvas(slide) {
   var paper = papers[slide.id]
       paper.clear();
   try {
-    (new Function("paper", "window", "document", $("#code_for_"+slide.raphael_id).val() ) ).call(paper, paper);
+    (new Function("paper", "window", "document", $("#editor textarea").val() ) ).call(paper, paper);
   } catch (e) {
     alert(e.message || e);
   }
@@ -349,10 +370,9 @@ function note_html(note) {
                               '</div>'
 }
 function slide_html(slide) {
-    return '<div id="slide_'+slide.id+'" class="slide zoomed_in_slide">'+
+    return '<div id="slide_'+slide.id+'" class="slide zoomed_in_slide slide_transition">'+
                      '<div id="'+slide.raphael_id+'" class="raphael"> </div>'+
-                     '<textarea id="code_for_'+slide.raphael_id+'" class="code"></textarea>'+
-                     '<div class="run_container"> <button id="run_'+slide.id+'" class="run" type="button">Run</button><button class="save" type="button">Save</button></div>'+
+                     '<div class="run_container" style="display:none;"> <button id="run_'+slide.id+'" class="run" type="button">Run</button><button class="save" type="button">Save</button></div>'+
                  '</div>'
 }
 
@@ -370,7 +390,6 @@ function make_slides() {
   if( slides_hash != null) {
     for( slide in slides_hash) {
       $(".slides").append(slide_html(slides_hash[slide]));
-      $("#code_for_"+slide.raphael_id).val(slide.code);
       create_canvas(slides_hash[slide]);
     }
   } 
@@ -379,7 +398,6 @@ function make_slides() {
     for(var i = 0; i < 4; i++) {
       var slide = Slide();
       $(".slides").append( slide_html(slide) );
-      $("#code_for_"+slide.raphael_id).val(slide.code);
       create_canvas(slide);
       slides_hash[slide.id] = slide;
     }
