@@ -1,9 +1,19 @@
-var db;
+var code_editor;
 var res;
 var uiLeft, uiTop, uiWidth, uiHeight;
 var slideWidth, slideHeight, cylonOffset;
 var slides_hash = {}, notes_hash = {}, papers = {};
 $(function() {
+
+  var code_id = document.getElementById('code');
+  code_editor = new CodeMirror.fromTextArea(code_id, {
+    parserfile: ["tokenizejavascript.js", "parsejavascript.js"],
+    stylesheet: "public/javascripts/codemirror/css/jscolors.css",
+    path: "public/javascripts/codemirror/js/",
+    autoMatchParens: true,
+    width: "100%",
+    height: "100%",
+  });
 
   read_slides();
   read_notes();
@@ -12,12 +22,15 @@ $(function() {
   setCurrent();
   slideWidth = $(".slide").width();
   slideHeight = $(".slide").height();
-  //var editor = ace.edit("editor");
-  //editor.setTheme("ace/theme/twilight");
 
+  $(".editbox").live("keydown", function() {
+    console.log("hi");    
+  });
   $(".code").live("blur", function(event) {
       id = $(".current").attr("id").split("_")[1];
+      code_editor.save();
       slides_hash[id].code = $("#editor textarea").val();
+      set_canvas(slides_hash[id]);
       save_slides();
   });
   $(".raphael").dblclick( function(event) {
@@ -139,12 +152,15 @@ $(function() {
   $(".past").live("click", function() { go_to_prev(); });
 
   $(".save").live("click", function() {
+    code_editor.save();
     save_notes();
     save_slides();
   });
   $(".run").live("click", function() {
     var id = $(this).attr("id").split("_")[1]
     var n = slides_hash[id]
+    n.code = code_editor.getCode();
+    code_editor.save();
     save_slides();
     set_canvas(n);
   });
@@ -179,7 +195,7 @@ function handleKeys(e) {
 function codingMode(e) {
     $(".presentation").addClass("coding_mode");
     $("#editor").toggle(e);
-    $($(".current").find(".run_container")).toggle(e);
+    $(".slide").find(".run_container").toggle();
     $(".current").toggleClass("zoomed_in_slide").toggleClass("zoomed_out_slide");
     $(".slide").toggleClass("slide_transition");
 }
@@ -212,6 +228,7 @@ function go_to_prev() {
 
     var id = $(".current").attr("id").split("_")[1];
     $("#editor textarea").val(slides_hash[id].code);
+    code_editor.setCode(slides_hash[id].code);
     set_canvas(slides_hash[id])
   } else if( $(".presentation").hasClass("editing_mode")) {
     
@@ -233,6 +250,7 @@ function go_to_next() {
     var id = $(".current").attr("id").split("_")[1]
     $("#editor textarea").val(slides_hash[id].code);
     set_canvas(slides_hash[id])
+    code_editor.setCode(slides_hash[id].code);
   } else if ( $(".presentation").hasClass("editing_mode") ) {
     // Create Slide and give it two notes
     current.prev().removeClass("past").addClass("far-past")
@@ -244,6 +262,7 @@ function go_to_next() {
     $("#slide_"+slide.id).addClass("current")
     save_slides();
     $("#editor textarea").val(slides_hash[slide.id].code);
+    code_editor.setCode(slides_hash[slide.id].code);
     create_canvas(slide);
 
     // Autopopulate with two placeholder notes.    
@@ -309,7 +328,7 @@ function set_canvas(slide) {
   var paper = papers[slide.id]
       paper.clear();
   try {
-    (new Function("paper", "window", "document", $("#editor textarea").val() ) ).call(paper, paper);
+    (new Function("paper", "window", "document", slide.code ) ).call(paper, paper);
   } catch (e) {
     alert(e.message || e);
   }
@@ -403,7 +422,6 @@ function make_slides() {
     }
   }
 }
-
 function read_slides() { slides_hash = JSON.parse(localStorage.getItem("slides")); }
 function read_notes()  { notes_hash = JSON.parse(localStorage.getItem("notes")); }
 function save_slides() { localStorage.setItem("slides", JSON.stringify(slides_hash)); }
