@@ -66,7 +66,7 @@ var linen = (function() {
       }
 
       // Lists are pretty different, so we'll treat them completely differently here.
-      if(c == '*' || c == '#') { return handle_list(block) }
+      if((c == '*' || c == '#') && (block[1] == ' ' || block[1] == '\t')) { return handle_list(block) }
 
       // Tables are also different, so they get their own function too.
       if(c == '|') { return lex_table(block) }
@@ -140,21 +140,21 @@ var linen = (function() {
       // Look for classes & ids
       else if(c == '(') {
         var start = i;
-        while(block[i++] !== ')') continue;
+        while(block[i++] !== ')' && i < block.length) continue;
         attrs.push(block.slice(start, i--));
       }
 
       // Look for languages
       else if(c == '[') {
         var start = i;
-        while(block[i++] !== ']') continue;
+        while(block[i++] !== ']' && i < block.length) continue;
         attrs.push(block.slice(start, i--));
       }
 
       // look for styles
       else if(c == '{') {
         var start = i;
-        while(block[i++] !== '}') continue;
+        while(block[i++] !== '}' && i < block.length) continue;
         attrs.push(block.slice(start, i--));
       }
 
@@ -170,6 +170,13 @@ var linen = (function() {
     };
   }
 
+
+  function escape_everything(text) {
+    // TODO: Escape more things. 
+    return text.replace(/</g, "&#60;")
+               .replace(/>/g, "&#62;")
+               .replace(/"/g, "&#34;");
+  }
 
   function do_substitutions(text) {
     // This is a simple substitution based system.  It might be worth
@@ -198,8 +205,12 @@ var linen = (function() {
                .replace(/"([^"]+)":(http\S+)/g, function(_, content, url) {  return make_tag('a', content, 'href="' + url + '"') })
 
                // Images
-               .replace(/!([^!]+)!:(http\S+)/g, function(_, content, url) { return make_tag('a', ' '+ make_tag('img', "", "src=\"" + content + "\""), 'href="' + url + '"') })
-               .replace(/!([^!]+)!/g, function(content) { return make_tag('img', "", "src=\"" + cleanup(content) + "\"") })
+               .replace(/!\b([^! \n]+)\b!:(http\S+)/g, function(_, content, url) {
+                 return make_tag('a',
+                   ' ' + make_tag('img', "", "src=\"" + content + "\""),
+                   'href="' + url + '"')
+               })
+               .replace(/!([^! \n]+)!/g, function(content) { return make_tag('img', "", "src=\"" + cleanup(content) + "\"") })
 
                // Punctuation
                .replace(/--/g, "&#8212;")
@@ -314,6 +325,12 @@ var linen = (function() {
       // Some special stuff for tables
       else if(block.type == "table")
         obj = parse_table(block);
+      else if(block.type == "bc")
+        obj = {
+          type: block.type,
+          content: escape_everything(block.content),
+          attrs: parse_attrs(block.attrs)
+        };
       // The general case
       else {
         obj = {
@@ -435,8 +452,6 @@ var linen = (function() {
                 "</p>";
       }
       function blockcode(b) {
-        // TODO: Change this to fit the reference implementation,
-        // if I can think of a good reason to.
         return "<pre" + html_attrs(b) + "><code>" +
                  b.content +
                "</code></pre>";
@@ -481,7 +496,6 @@ var linen = (function() {
 
           return ret;
         }
-        // TODO: Add attributes somehow
 
         return list_generator(listObj.content);
       }

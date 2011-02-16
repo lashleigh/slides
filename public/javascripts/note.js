@@ -26,6 +26,8 @@ $(function() {
   });
 
   $(".editable").live("dblclick", function(event) {
+    $(".preview").show();
+    $(".edit_area").focusout().hide();
     $(this).find(".preview").hide();
     $(this).find(".edit_area").show().focus();
     event.stopPropagation();
@@ -48,6 +50,7 @@ $(function() {
   $(".edit_area").live("blur", function(event) {
     var id = $($(event.target).parent()).attr("id").split("_")[1];
     notes_hash[id].content = $(event.target).val();
+    if(notes_hash[id].content == "") { delete notes_hash[id]; }
     save_notes();
   });
 
@@ -162,21 +165,32 @@ function handleKeys(e) {
      presentationMode(); break;
    case 69: // E
      editingMode(); break;
-   case 51: // 3
+   case 65: //a
+     toggle_code_box(e); break;
+   //case 51: // 3
      //this.switch3D(); break;
-   case 83: //S
-     reorder_slides(); break;
+   //case 83: //S
+     //reorder_slides(); break;
   }
 }
-
+function toggle_code_box(e) {
+    $($(".current").find(".code")).toggle(e);
+    $(".current").toggleClass("zoomed_in_slide").toggleClass("zoomed_out_slide");
+}
 function presentationMode() {
     clear_borders();
     $("#cue_box").hide();
     $(".presentation").removeClass("editing_mode");
+    $(".note").removeClass("editable");
+    $(".note").draggable("disable");
+    $(".note").resizable("disable");
 }
 function editingMode() {
     $(".presentation").addClass("editing_mode");
     $("#cue_box").show();
+    $(".note").addClass("editable");
+    $(".note").draggable("enable");
+    $(".note").resizable("enable");
 }
 function prev() {
   var current = $(".current")
@@ -259,7 +273,7 @@ function Slide(I) {
                     ');\n\n'+
                     'st.animate({fill: "red", stroke: "#000", "stroke-width": 30, "stroke-opacity": 0.5}, 1000);';*/
     I.raphael_id = "raphael_"+I.id;
-    I.html_ = '<div id="slide_'+I.id+'" class="slide zoomed_in_slide">'+
+    I.html_ = '<div id="slide_'+I.id+'" class="slide zoomed_out_slide">'+
                      '<div id="'+I.raphael_id+'" class="raphael"> </div>'+
                      '<textarea id="code_for_'+I.raphael_id+'" class="code"></textarea>'+
                      '<div id="run_container"> <button id="run_'+I.id+'" class="run" type="button">Run</button><button class="save" type="button">Save</button></div>'+
