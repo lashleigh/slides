@@ -46,7 +46,8 @@ $(function() {
 
   $(".editable").live("focusout", function(event) {
     var edit_area_content = $(this).find(".edit_area").val();
-    var note_id = extract_id(this);
+    var note_id = extract_note_id(this);
+console.log(this, note_id);
     $(this).find(".preview").html(linen($(this).find(".edit_area").val()));
     $(this).find(".preview").show();
     $(this).find(".edit_area").hide();
@@ -93,7 +94,7 @@ $(function() {
         $(this).css("top", uiTop+"px");
         clear_borders();
         grey_border(this);
-        var id = extract_id(this);
+        var id = extract_note_id(this);
         notes_hash[id].top = uiTop;
         notes_hash[id].left = uiLeft;
         save_notes();
@@ -135,7 +136,7 @@ $(function() {
       stop: function(event, ui) {
         clear_borders();
         grey_border(this);
-        var id = extract_id(this);
+        var id = extract_note_id(this);
         notes_hash[id].top = uiTop;
         notes_hash[id].left = uiLeft;
         notes_hash[id].width = uiWidth;
@@ -257,7 +258,7 @@ function go_to_next() {
     header_note.height = 110;
     header_note.content = "h1. Header holder";
     header_note.slide_id = slide.raphael_id;
-    notes_hash[header_note.id] = header_note;
+    notes_hash[header_note.note_id] = header_note;
     make_a_note(header_note);
 
     var body_note = Note();
@@ -267,7 +268,7 @@ function go_to_next() {
     body_note.height = 380;
     body_note.content = "p(pink). paragraphs here";
     body_note.slide_id = slide.raphael_id;
-    notes_hash[body_note.id] = body_note;
+    notes_hash[body_note.note_id] = body_note;
     make_a_note(body_note);
 
     save_notes();
@@ -323,12 +324,12 @@ function Note(I) {
   I = I || {}
 
   I.active = true;
+
   I.id = (new Date()).getTime();
+  I.note_id = "note_"+I.id;
   I.slide_id;
-  I.top;
-  I.left;
-  I.width = 200;
-  I.height = 100;
+  
+  I.top; I.left; I.width = 200; I.height = 100;
 
   I.content = "p{color:red;}. Placeholder";
   return I;
@@ -339,7 +340,7 @@ function new_note_from_click(event, raphael_id) {
   n.top = event.offsetY;
   n.left = event.offsetX;
   $("#"+n.slide_id).append(note_html(n));
-  notes_hash[n.id] = n;
+  notes_hash[n.note_id] = n;
 }
 function get_style(note) {
   var style = "position:absolute;width:"+note.width+"px;height:"+note.height+'px;top:'+note.top+'px;left:'+note.left+'px;';
@@ -463,4 +464,8 @@ function save_and_run_code() {
 }
 function extract_id(selector) {
   return $(selector).find(".raphael").attr("id");
+}
+
+function extract_note_id(selector) {
+  return $(selector).attr("id");
 }
