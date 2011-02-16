@@ -5,25 +5,26 @@ var slideWidth, slideHeight, cylonOffset;
 var slides_hash = {}, notes_hash = {}, papers = {};
 $(function() {
 
+  read_slides();
+  read_notes();
+  make_slides();
+  make_notes();
+  setCurrent();
+  slideWidth = $(".slide").width();
+  slideHeight = $(".slide").height();
+
   var code_id = document.getElementById('code');
   code_editor = new CodeMirror.fromTextArea(code_id, {
+    content: slides_hash[$(".current").attr("id").split("_")[1]].code,
     parserfile: ["tokenizejavascript.js", "parsejavascript.js"],
     stylesheet: "public/javascripts/codemirror/css/jscolors.css",
     path: "public/javascripts/codemirror/js/",
     autoMatchParens: true,
     width: "100%",
     height: "100%",
-    saveFunction: function() {save_it();}
+    saveFunction: function() {save_code($(".current"));}
   });
 
-  read_slides();
-  read_notes();
-  make_slides();
-  make_notes();
-  setCurrent();
-  save_it();
-  slideWidth = $(".slide").width();
-  slideHeight = $(".slide").height();
 
   $(".raphael").dblclick( function(event) {
     if( $($(event.target).parent()).hasClass("raphael") ){
@@ -137,13 +138,6 @@ $(function() {
   $(".future").live("click", function() { go_to_next(); });
   $(".past").live("click", function() { go_to_prev(); });
 
-  $(".save").live("click", function() {
-    save_it();
-  });
-  $(".run").live("click", function() {
-    save_it();
-  });
-
   $(document).keydown( function(e) {
     if( $(e.srcElement).hasClass("edit_area") || $(e.srcElement).hasClass("code")) { 
     } else {
@@ -174,7 +168,6 @@ function handleKeys(e) {
 function codingMode(e) {
     $(".presentation").toggleClass("coding_mode");
     $("#editor").toggle(e);
-    $(".slide").find(".run_container").toggle();
     $(".current").toggleClass("zoomed_in_slide").toggleClass("zoomed_out_slide");
     $(".slide").toggleClass("slide_transition");
 }
@@ -195,7 +188,9 @@ function editingMode() {
 }
 function go_to_prev() {
   var current = $(".current")
+  save_code(current);
   if (current.prev().size() != 0) {
+    set_code($(current).prev());
     if( $(".presentation").hasClass("coding_mode") ) {
       current.addClass("zoomed_in_slide").removeClass("zoomed_out_slide");
       current.prev().addClass("zoomed_out_slide").removeClass("zoomed_in_slide");
@@ -206,15 +201,15 @@ function go_to_prev() {
     current.addClass("reduced future").removeClass("current")
     current.prev().prev().addClass("past").removeClass("far-past")
 
-    save_it();
   } else if( $(".presentation").hasClass("editing_mode")) {
-    
   }
 }
 
 function go_to_next() {
   var current = $(".current")
+  save_code(current);
   if( current.next().size() == 1)  {
+    set_code($(current).next());
     if ( $(".presentation").hasClass("coding_mode") ){
       current.addClass("zoomed_in_slide").removeClass("zoomed_out_slide");
       current.next().addClass("zoomed_out_slide").removeClass("zoomed_in_slide");
@@ -224,14 +219,12 @@ function go_to_next() {
     current.next().next().addClass("future reduced").removeClass("far-future")
     current.addClass("reduced past").removeClass("current") 
 
-    save_it();
   } else if ( $(".presentation").hasClass("editing_mode") ) {
     // Create Slide and give it two notes
     current.prev().removeClass("past").addClass("far-past")
     current.addClass("reduced past").removeClass("current") 
 
     var slide = Slide();
-    slide.code = "";
     $(".slides").append( slide_html(slide) );
     slides_hash[slide.id] = slide;
     $("#slide_"+slide.id).addClass("current")
@@ -239,6 +232,7 @@ function go_to_next() {
     $("#editor textarea").val(slides_hash[slide.id].code);
     code_editor.setCode(slides_hash[slide.id].code);
     create_canvas(slide);
+    set_code($(".current"));
 
     if( $(".presentation").hasClass("coding_mode")) {
       $(".current").addClass("zoomed_out_slide").removeClass("zoomed_in_slide slide_transition");
@@ -267,6 +261,7 @@ function go_to_next() {
 
     save_notes();
   };
+  set_code($(".current"));
 }
 
 function setCurrent() {
@@ -275,6 +270,9 @@ function setCurrent() {
   for( var i = 2; i < $(".slide").length; i++) {
     $($(".slide")[i]).addClass("reduced far-future")
   }
+  var id = $(".current").attr("id").split("_")[1];
+  $("#editor textarea").val(slides_hash[id].code);
+  set_canvas(slides_hash[id]);
 }
 function Slide(I) {
     I = I || {}
@@ -367,7 +365,6 @@ function note_html(note) {
 function slide_html(slide) {
     return '<div id="slide_'+slide.id+'" class="slide zoomed_in_slide slide_transition">'+
                      '<div id="'+slide.raphael_id+'" class="raphael"> </div>'+
-                     '<div class="run_container" style="display:none;"> <button id="run_'+slide.id+'" class="run" type="button">Run</button><button class="save" type="button">Save</button></div>'+
                  '</div>'
 }
 
@@ -427,12 +424,16 @@ function basic_move() {
   }
 }
 
-function save_it() {
-  code_editor.save();
-  var id = $(".current").attr("id").split("_")[1]
-  $("#editor textarea").val(slides_hash[id].code);
-  set_canvas(slides_hash[id])
+function set_code(selector) {
+  var id = $(selector).attr("id").split("_")[1]
   code_editor.setCode(slides_hash[id].code);
+}
+
+function save_code(selector) {
+  code_editor.save();
+  var id = $(selector).attr("id").split("_")[1]
+  slides_hash[id].code = $("#editor textarea").val();
+  set_canvas(slides_hash[id])
   save_notes();
   save_slides();
 }
