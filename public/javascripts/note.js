@@ -25,7 +25,7 @@ $(function() {
     autoMatchParens: true,
     width: "100%",
     height: "100%",
-    saveFunction: function() {save_code($(".current"));}
+    saveFunction: function() {save_and_run_code();}
   });
 
 
@@ -199,8 +199,8 @@ function editingMode() {
 function go_to_prev() {
   var current = $(".current")
   save_code(current);
-  if (current.prev().size() != 0) {
-    set_code($(current).prev());
+  if (current.prev().hasClass("slide")) {
+    set_and_run_code($(current).prev());
     if( $(".presentation").hasClass("coding_mode") ) {
       current.addClass("zoomed_in_slide").removeClass("zoomed_out_slide");
       current.prev().addClass("zoomed_out_slide").removeClass("zoomed_in_slide");
@@ -218,8 +218,8 @@ function go_to_prev() {
 function go_to_next() {
   var current = $(".current")
   save_code(current);
-  if( current.next().size() == 1)  {
-    set_code($(current).next());
+  if( current.next().hasClass("slide"))  {
+    set_and_run_code($(current).next());
     if ( $(".presentation").hasClass("coding_mode") ){
       current.addClass("zoomed_in_slide").removeClass("zoomed_out_slide");
       current.next().addClass("zoomed_out_slide").removeClass("zoomed_in_slide");
@@ -235,14 +235,15 @@ function go_to_next() {
     current.addClass("reduced past").removeClass("current") 
 
     var slide = Slide();
+    var hash_id = slide.raphael_id;
     $(".slides").append( slide_html(slide) );
-    slides_hash[slide.id] = slide;
+    slides_hash[hash_id] = slide;
     $("#slide_"+slide.id).addClass("current")
     save_slides();
-    $("#editor textarea").val(slides_hash[slide.id].code);
-    code_editor.setCode(slides_hash[slide.id].code);
+    $("#editor textarea").val(slides_hash[hash_id].code);
+    code_editor.setCode(slides_hash[hash_id].code);
     create_canvas(slide);
-    set_code($(".current"));
+    set_and_run_code($(".current"));
 
     if( $(".presentation").hasClass("coding_mode")) {
       $(".current").addClass("zoomed_out_slide").removeClass("zoomed_in_slide slide_transition");
@@ -271,7 +272,7 @@ function go_to_next() {
 
     save_notes();
   };
-  set_code($(".current"));
+  set_and_run_code($(".current"));
 }
 
 function setCurrent() {
@@ -382,7 +383,7 @@ function handleCorner(event) {
     var width = $(".current").width();
     var margin_right = (-1)*(width*(1-scale)/2);
     var exact_scale = parseFloat($($(".current").css("-webkit-transform").split(","))[0].split("(")[1]);
-    var editor_width = screen.availWidth - $(".current").width()*exact_scale;
+    var editor_width = screen.availWidth - 10 - $(".current").width()*exact_scale;
     $(".current").css('-webkit-transform','scale('+scale+')');
     $(".current").css('margin-right', margin_right+'px');
     $("#editor").css('width', editor_width+'px');
@@ -400,18 +401,18 @@ function make_notes() {
 function make_slides() {
   if( slides_hash != null) {
     for( s_id in slides_hash) {
-        var slide = slides_hash[s_id];
+      var slide = slides_hash[s_id];
       $(".slides").append(slide_html(slide));
       create_canvas(slide);
     }
   } 
   else {
     slides_hash = {};
-    for(var i = 0; i < 4; i++) {
+    for(var i = 0; i < 3; i++) {
       var slide = Slide();
       $(".slides").append( slide_html(slide) );
       create_canvas(slide);
-      slides_hash[slide.id] = slide;
+      slides_hash[slide.raphael_id] = slide;
     }
   }
 }
@@ -443,7 +444,7 @@ function basic_move() {
   }
 }
 
-function set_code(selector) {
+function set_and_run_code(selector) {
   var id = extract_id(selector);
   code_editor.setCode(slides_hash[id].code);
   set_canvas(slides_hash[id])
@@ -455,8 +456,11 @@ function save_code(selector) {
   slides_hash[id].code = $("#editor textarea").val();
   save_notes();
   save_slides();
-  set_canvas(slides_hash[id])
+}
+function save_and_run_code() {
+  save_code($(".current"))
+  set_canvas(slides_hash[extract_id($(".current"))])
 }
 function extract_id(selector) {
-  return $(selector).attr("id").split("_")[1]
+  return $(selector).find(".raphael").attr("id");
 }
