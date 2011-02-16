@@ -175,6 +175,7 @@ function handleKeys(e) {
 }
 function toggle_code_box(e) {
     $($(".current").find(".code")).toggle(e);
+    $($(".current").find(".run_container")).toggle(e);
     $(".current").toggleClass("zoomed_in_slide").toggleClass("zoomed_out_slide");
 }
 function presentationMode() {
@@ -219,7 +220,7 @@ function next() {
     current.addClass("reduced past").removeClass("current") 
 
     var slide = Slide();
-    $(".slides").append(slide.html_);
+    $(".slides").append( slide_html(slide) );
     $("#code_for_"+slide.raphael_id).val(slide.code);
     create_canvas(slide);
     slides_hash[slide.id] = slide;
@@ -273,17 +274,12 @@ function Slide(I) {
                     ');\n\n'+
                     'st.animate({fill: "red", stroke: "#000", "stroke-width": 30, "stroke-opacity": 0.5}, 1000);';*/
     I.raphael_id = "raphael_"+I.id;
-    I.html_ = '<div id="slide_'+I.id+'" class="slide zoomed_out_slide">'+
-                     '<div id="'+I.raphael_id+'" class="raphael"> </div>'+
-                     '<textarea id="code_for_'+I.raphael_id+'" class="code"></textarea>'+
-                     '<div id="run_container"> <button id="run_'+I.id+'" class="run" type="button">Run</button><button class="save" type="button">Save</button></div>'+
-                 '</div>';
-    
+   
     return I;
 }
 
 function create_canvas(slide) {
-  papers[slide.id] = Raphael(slide.raphael_id, 900, 500);
+  papers[slide.id] = Raphael(slide.raphael_id, 900, 700);
   $("#code_for_"+slide.raphael_id).val(slide.code);
  
   set_canvas(slide);
@@ -352,6 +348,13 @@ function note_html(note) {
                               '<textarea class="edit_area" style="width:'+note.width+'px;height:'+note.height+'px;"  >'+note.content+'</textarea>'+
                               '</div>'
 }
+function slide_html(slide) {
+    return '<div id="slide_'+slide.id+'" class="slide zoomed_in_slide">'+
+                     '<div id="'+slide.raphael_id+'" class="raphael"> </div>'+
+                     '<textarea id="code_for_'+slide.raphael_id+'" class="code"></textarea>'+
+                     '<div class="run_container"> <button id="run_'+slide.id+'" class="run" type="button">Run</button><button class="save" type="button">Save</button></div>'+
+                 '</div>'
+}
 
 function make_notes() {
   if( notes_hash != null) {
@@ -366,7 +369,7 @@ function make_notes() {
 function make_slides() {
   if( slides_hash != null) {
     for( slide in slides_hash) {
-      $(".slides").append(slides_hash[slide].html_);
+      $(".slides").append(slide_html(slides_hash[slide]));
       $("#code_for_"+slide.raphael_id).val(slide.code);
       create_canvas(slides_hash[slide]);
     }
@@ -375,7 +378,7 @@ function make_slides() {
     slides_hash = {};
     for(var i = 0; i < 4; i++) {
       var slide = Slide();
-      $(".slides").append(slide.html_);
+      $(".slides").append( slide_html(slide) );
       $("#code_for_"+slide.raphael_id).val(slide.code);
       create_canvas(slide);
       slides_hash[slide.id] = slide;
