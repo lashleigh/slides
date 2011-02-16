@@ -4,6 +4,9 @@ var uiLeft, uiTop, uiWidth, uiHeight;
 var slideWidth, slideHeight, cylonOffset;
 var slides_hash = {}, notes_hash = {}, papers = {};
 $(function() {
+  Raphael.fn.arrow = function (x, y) {
+    return this.path(["M", x, y] + "m-10-10l20,0 0-6 10,16 -10,16 0-6 -20,0 0,6 -10-16 10-16z").attr({fill: "#fff", stroke: "none", "stroke-dasharray": "-", "fill-opacity": 0.3});
+  };
 
   read_slides();
   read_notes();
@@ -15,7 +18,7 @@ $(function() {
 
   var code_id = document.getElementById('code');
   code_editor = new CodeMirror.fromTextArea(code_id, {
-    content: slides_hash[$(".current").attr("id").split("_")[1]].code,
+    content: slides_hash[extract_id($(".current"))].code,
     parserfile: ["tokenizejavascript.js", "parsejavascript.js"],
     stylesheet: "public/javascripts/codemirror/css/jscolors.css",
     path: "public/javascripts/codemirror/js/",
@@ -43,11 +46,15 @@ $(function() {
 
   $(".editable").live("focusout", function(event) {
     var edit_area_content = $(this).find(".edit_area").val();
-    var note_id = $(this).attr("id").split("_")[1];
+    var note_id = extract_id(this);
     $(this).find(".preview").html(linen($(this).find(".edit_area").val()));
     $(this).find(".preview").show();
     $(this).find(".edit_area").hide();
     notes_hash[note_id].content = edit_area_content;
+    if(notes_hash[note_id].content == "") { 
+      delete notes_hash[note_id]; 
+      $(this).hide();   
+    }
     save_notes();
     prettify();
   });
@@ -86,7 +93,7 @@ $(function() {
         $(this).css("top", uiTop+"px");
         clear_borders();
         grey_border(this);
-        var id = $(this).attr("id").split("_")[1];
+        var id = extract_id(this);
         notes_hash[id].top = uiTop;
         notes_hash[id].left = uiLeft;
         save_notes();
@@ -128,7 +135,7 @@ $(function() {
       stop: function(event, ui) {
         clear_borders();
         grey_border(this);
-        var id = $(this).attr("id").split("_")[1];
+        var id = extract_id(this);
         notes_hash[id].top = uiTop;
         notes_hash[id].left = uiLeft;
         notes_hash[id].width = uiWidth;
@@ -273,7 +280,7 @@ function setCurrent() {
   for( var i = 2; i < $(".slide").length; i++) {
     $($(".slide")[i]).addClass("reduced far-future")
   }
-  var id = $(".current").attr("id").split("_")[1];
+  var id = extract_id( $(".current"));
   $("#editor textarea").val(slides_hash[id].code);
   set_canvas(slides_hash[id]);
 }
@@ -297,7 +304,7 @@ function Slide(I) {
 }
 
 function create_canvas(slide) {
-  papers[slide.id] = Raphael(slide.raphael_id, 900, 700);
+  papers[slide.id] = Raphael(slide.raphael_id, 900, 700), dashed = {fill: "none", stroke: "#666", "stroke-dasharray": "- "};;
  
   set_canvas(slide);
 }
@@ -369,7 +376,17 @@ function slide_html(slide) {
                      '<div id="'+slide.raphael_id+'" class="raphael"> </div>'+
                  '</div>'
 }
-
+function handleCorner(event) {
+    var border = $("#face-rounded-border").val();
+    var scale = border / 100;
+    var width = $(".current").width();
+    var margin_right = (-1)*(width*(1-scale)/2);
+    var exact_scale = parseFloat($($(".current").css("-webkit-transform").split(","))[0].split("(")[1]);
+    var editor_width = screen.availWidth - $(".current").width()*exact_scale;
+    $(".current").css('-webkit-transform','scale('+scale+')');
+    $(".current").css('margin-right', margin_right+'px');
+    $("#editor").css('width', editor_width+'px');
+}
 function make_notes() {
   if( notes_hash != null) {
     for( n in notes_hash) {
@@ -427,16 +444,19 @@ function basic_move() {
 }
 
 function set_code(selector) {
-  var id = $(selector).attr("id").split("_")[1]
+  var id = extract_id(selector);
   code_editor.setCode(slides_hash[id].code);
   set_canvas(slides_hash[id])
 }
 
 function save_code(selector) {
   code_editor.save();
-  var id = $(selector).attr("id").split("_")[1]
+  var id = extract_id(selector);
   slides_hash[id].code = $("#editor textarea").val();
   save_notes();
   save_slides();
   set_canvas(slides_hash[id])
+}
+function extract_id(selector) {
+  return $(selector).attr("id").split("_")[1]
 }
