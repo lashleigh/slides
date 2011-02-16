@@ -193,7 +193,7 @@ function handleKeys(e) {
   }
 }
 function codingMode(e) {
-    $(".presentation").addClass("coding_mode");
+    $(".presentation").toggleClass("coding_mode");
     $("#editor").toggle(e);
     $(".slide").find(".run_container").toggle();
     $(".current").toggleClass("zoomed_in_slide").toggleClass("zoomed_out_slide");
@@ -216,11 +216,12 @@ function editingMode() {
 }
 function go_to_prev() {
   var current = $(".current")
-  if (current.hasClass("zoomed_out_slide") ){
-    current.addClass("zoomed_in_slide").removeClass("zoomed_out_slide");
-    current.prev().addClass("zoomed_out_slide").removeClass("zoomed_in_slide");
-  }
   if (current.prev().size() != 0) {
+    if( $(".presentation").hasClass("coding_mode") ) {
+      current.addClass("zoomed_in_slide").removeClass("zoomed_out_slide");
+      current.prev().addClass("zoomed_out_slide").removeClass("zoomed_in_slide");
+    }
+
     current.prev().removeClass("reduced past").addClass("current")
     current.next().removeClass("future").addClass("far-future")
     current.addClass("reduced future").removeClass("current")
@@ -237,11 +238,11 @@ function go_to_prev() {
 
 function go_to_next() {
   var current = $(".current")
-  if (current.hasClass("zoomed_out_slide") ){
-    current.addClass("zoomed_in_slide").removeClass("zoomed_out_slide");
-    current.next().addClass("zoomed_out_slide").removeClass("zoomed_in_slide");
-  }
   if( current.next().size() == 1)  {
+    if ( $(".presentation").hasClass("coding_mode") ){
+      current.addClass("zoomed_in_slide").removeClass("zoomed_out_slide");
+      current.next().addClass("zoomed_out_slide").removeClass("zoomed_in_slide");
+    }
     current.next().removeClass("future reduced").addClass("current")
     current.prev().removeClass("past").addClass("far-past")
     current.next().next().addClass("future reduced").removeClass("far-future")
@@ -257,6 +258,7 @@ function go_to_next() {
     current.addClass("reduced past").removeClass("current") 
 
     var slide = Slide();
+    slide.code = "";
     $(".slides").append( slide_html(slide) );
     slides_hash[slide.id] = slide;
     $("#slide_"+slide.id).addClass("current")
@@ -264,6 +266,10 @@ function go_to_next() {
     $("#editor textarea").val(slides_hash[slide.id].code);
     code_editor.setCode(slides_hash[slide.id].code);
     create_canvas(slide);
+
+    if( $(".presentation").hasClass("coding_mode")) {
+      $(".current").addClass("zoomed_out_slide").removeClass("zoomed_in_slide slide_transition");
+    }
 
     // Autopopulate with two placeholder notes.    
     var header_note = Note();
@@ -304,7 +310,7 @@ function Slide(I) {
     I = I || {}
 
     I.id = (new Date()).getTime();
-    I.code; /*='demo1 = paper.circle(320, 240, 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);\n'+
+    I.code = ""; /*='demo1 = paper.circle(320, 240, 60).animate({fill: "#223fa3", stroke: "#000", "stroke-width": 80, "stroke-opacity": 0.5}, 2000);\n'+
                     'demo1.node.onclick = function () {\n'+
                     '    demo1.attr("fill", "red");\n'+
                     '};\n\n'+
@@ -407,9 +413,10 @@ function make_notes() {
 
 function make_slides() {
   if( slides_hash != null) {
-    for( slide in slides_hash) {
-      $(".slides").append(slide_html(slides_hash[slide]));
-      create_canvas(slides_hash[slide]);
+    for( s_id in slides_hash) {
+        var slide = slides_hash[s_id];
+      $(".slides").append(slide_html(slide));
+      create_canvas(slide);
     }
   } 
   else {
