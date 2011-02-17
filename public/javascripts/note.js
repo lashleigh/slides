@@ -319,8 +319,8 @@ function set_canvas(slide) {
         //delete slides_hash[slide.raphael_id];
         //$(".current").hide();
         //go_to_next();
-        delete slides_hash[slide.raphael_id];
-        save_slides();
+        //delete slides_hash[slide.raphael_id];
+        //save_slides();
       });
   try {
     (new Function("paper", "window", "document", slide.code ) ).call(paper, paper);
