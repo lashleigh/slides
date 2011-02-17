@@ -37,3 +37,18 @@ Raphael.fn.randomRect = function(x, y) {
   });
   return newRect;
 }
+
+Raphael.fn.deleteButton = function(slide_id, hash) {
+  var button = this.circle(20, 680, 10).attr("fill", "red");
+  $(button.node).mouseenter( function() {
+    button.animate({scale: "1.5 1.5"}, 2000, "bounce");
+  });
+  $(button.node).mouseout( function() {
+    button.animate({scale: "1.0 1.0"}, 2000, "bounce");
+  });
+  $(button.node).click( function() {
+    delete hash.slide_id;
+    $(".current").hide();
+  });
+  return button;
+}

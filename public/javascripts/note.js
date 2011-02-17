@@ -228,7 +228,7 @@ function go_to_next() {
   } else if ( $(".presentation").hasClass("editing_mode") ) {
     // Create Slide and give it two notes
     current.prev().removeClass("past").addClass("far-past")
-    current.addClass("reduced past").removeClass("current") 
+    current.addClass("reduced past").removeClass("current").addClass("zoomed_in_slide").removeClass("zoomed_out_slide") 
 
     var slide = Slide();
     var hash_id = slide.raphael_id;
@@ -242,7 +242,7 @@ function go_to_next() {
     set_and_run_code($(".current"));
 
     if( $(".presentation").hasClass("coding_mode")) {
-      $(".current").addClass("zoomed_out_slide").removeClass("zoomed_in_slide slide_transition");
+      current.next().addClass("zoomed_out_slide").removeClass("zoomed_in_slide slide_transition");
     }
 
     // Autopopulate with two placeholder notes.    
@@ -308,6 +308,20 @@ function create_canvas(slide) {
 function set_canvas(slide) {
   var paper = papers[slide.id]
       paper.clear();
+      var button = paper.circle(20, 680, 10).attr("fill", "red");
+      $(button.node).mouseenter( function() {
+        button.animate({scale: "1.5 1.5"}, 2000, "bounce");
+      });
+      $(button.node).mouseout( function() {
+        button.animate({scale: "1.0 1.0"}, 2000, "bounce");
+      });
+      $(button.node).dblclick( function() { go_to_next();
+        //delete slides_hash[slide.raphael_id];
+        //$(".current").hide();
+        //go_to_next();
+        delete slides_hash[slide.raphael_id];
+        save_slides();
+      });
   try {
     (new Function("paper", "window", "document", slide.code ) ).call(paper, paper);
   } catch (e) {
