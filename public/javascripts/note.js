@@ -4,10 +4,6 @@ var uiLeft, uiTop, uiWidth, uiHeight;
 var slideWidth, slideHeight, cylonOffset;
 var slides_hash = {}, notes_hash = {}, papers = {};
 $(function() {
-  Raphael.fn.arrow = function (x, y) {
-    return this.path(["M", x, y] + "m-10-10l20,0 0-6 10,16 -10,16 0-6 -20,0 0,6 -10-16 10-16z").attr({fill: "#fff", stroke: "none", "stroke-dasharray": "-", "fill-opacity": 0.3});
-  };
-
   read_slides();
   read_notes();
   make_slides();
@@ -47,7 +43,6 @@ $(function() {
   $(".editable").live("focusout", function(event) {
     var edit_area_content = $(this).find(".edit_area").val();
     var note_id = extract_note_id(this);
-console.log(this, note_id);
     $(this).find(".preview").html(linen($(this).find(".edit_area").val()));
     $(this).find(".preview").show();
     $(this).find(".edit_area").hide();
@@ -421,29 +416,6 @@ function read_slides() { slides_hash = JSON.parse(localStorage.getItem("slides")
 function read_notes()  { notes_hash = JSON.parse(localStorage.getItem("notes")); }
 function save_slides() { localStorage.setItem("slides", JSON.stringify(slides_hash)); }
 function save_notes()  { localStorage.setItem("notes", JSON.stringify(notes_hash)); }
-
-function basic_move() {
-  startCircle = function () {
-    // storing original coordinates
-    this.ox = this.attr("cx");
-    this.oy = this.attr("cy");
-  },
-  moveCircle = function (dx, dy) {
-    // move will be called with dx and dy
-    this.attr({cx: this.ox + dx, cy: this.oy + dy, opacity: .5});
-  },
-  up = function () {
-    // restoring state
-    this.attr({opacity: 1});
-  };
-  startRect = function() {
-    this.ox = this.attr("x");
-    this.oy = this.attr("y");
-  }
-  moveRect = function(dx, dy) {
-    this.attr({x: this.ox + dx, y: this.oy + dy, opacity: .5});
-  }
-}
 
 function set_and_run_code(selector) {
   var id = extract_id(selector);
