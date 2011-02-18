@@ -28,4 +28,3 @@ function randomColor() {
   return "rgba("+r+","+g+","+b+","+o+")"
 }
 
-

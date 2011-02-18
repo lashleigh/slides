@@ -308,20 +308,6 @@ function create_canvas(slide) {
 function set_canvas(slide) {
   var paper = papers[slide.id]
       paper.clear();
-      var button = paper.circle(20, 680, 10).attr("fill", "red");
-      $(button.node).mouseenter( function() {
-        button.animate({scale: "1.5 1.5"}, 2000, "bounce");
-      });
-      $(button.node).mouseout( function() {
-        button.animate({scale: "1.0 1.0"}, 2000, "bounce");
-      });
-      $(button.node).dblclick( function() { go_to_next();
-        //delete slides_hash[slide.raphael_id];
-        //$(".current").hide();
-        //go_to_next();
-        //delete slides_hash[slide.raphael_id];
-        //save_slides();
-      });
   try {
     (new Function("paper", "window", "document", slide.code ) ).call(paper, paper);
   } catch (e) {
@@ -455,3 +441,4 @@ function extract_id(selector) {
 function extract_note_id(selector) {
   return $(selector).attr("id");
 }
+
