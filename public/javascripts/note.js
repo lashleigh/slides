@@ -249,7 +249,7 @@ function go_to_next() {
     var header_note = Note();
     header_note.top = 0;
     header_note.left = 0;
-    header_note.width = 900;
+    header_note.width = slideWidth;
     header_note.height = 110;
     header_note.content = "h1. Header holder";
     header_note.slide_id = slide.raphael_id;
@@ -259,7 +259,7 @@ function go_to_next() {
     var body_note = Note();
     body_note.top = 120;
     body_note.left = 0;
-    body_note.width = 900;
+    body_note.width = slideWidth;
     body_note.height = 380;
     body_note.content = "p(pink). paragraphs here";
     body_note.slide_id = slide.raphael_id;
@@ -301,27 +301,29 @@ function Slide(I) {
 }
 
 function create_canvas(slide) {
-  papers[slide.id] = Raphael(slide.raphael_id, 900, 700), dashed = {fill: "none", stroke: "#666", "stroke-dasharray": "- "};;
+  papers[slide.id] = d3.select("#"+slide.raphael_id).append("div").attr("class", "canvas"); //Raphael(slide.raphael_id, 900, 700), dashed = {fill: "none", stroke: "#666", "stroke-dasharray": "- "};;
  
   set_canvas(slide);
 }
 function set_canvas(slide) {
+  //var paper = $("#"+slide.raphael_id).find(".canvas");
   var paper = papers[slide.id]
-      paper.clear();
-      var button = paper.circle(20, 680, 10).attr("fill", "red");
+      $("#slide_"+slide.id+" .canvas").html("");
+      //paper.clear();
+      /*var button = paper.circle(20, 680, 10).attr("fill", "red");
       $(button.node).mouseenter( function() {
         button.animate({scale: "1.5 1.5"}, 2000, "bounce");
       });
       $(button.node).mouseout( function() {
         button.animate({scale: "1.0 1.0"}, 2000, "bounce");
       });
-      $(button.node).dblclick( function() { go_to_next();
+      $(button.node).dblclick( function() { go_to_next();*/
         //delete slides_hash[slide.raphael_id];
         //$(".current").hide();
         //go_to_next();
         //delete slides_hash[slide.raphael_id];
         //save_slides();
-      });
+      //});
   try {
     (new Function("paper", "window", "document", slide.code ) ).call(paper, paper);
   } catch (e) {
